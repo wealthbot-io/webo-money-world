@@ -7,7 +7,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+<!-- Alpine.js is self-hosted (vendored) so the app never depends on a third-party
+     CDN being reachable. A blocked/slow CDN previously made every Alpine-bound
+     element (Webo, lessons, dots, stars) vanish on load. -->
+<script defer src="/vendor/alpine-3.14.1.min.js"></script>
 <style>
   :root {
     --navy-deep: #0a1628;
