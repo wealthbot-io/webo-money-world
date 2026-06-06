@@ -133,8 +133,22 @@ async function isContentUnsafe(apiKey, text) {
 //   1. per-session  (per browser, the primary budget so shared IPs are not over-blocked)
 //   2. per-IP       (a higher backstop against a single-IP flood)
 //   3. global daily (a cost ceiling / circuit breaker bounding total spend)
-const kvUrl = () => process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-const kvToken = () => process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+// Resolve KV creds. Vercel's Marketplace KV/Upstash integration prefixes the env
+// vars with the store name (e.g. WEBO_MONEY_WORLD_KV_REST_API_URL), so match the
+// exact generic names first, then any var ENDING with the expected suffix. (We
+// want the read-WRITE token, so the read-only `..._READ_ONLY_TOKEN` is excluded
+// by suffix.)
+function resolveEnv(suffixes) {
+  for (const s of suffixes) if (process.env[s]) return process.env[s];
+  const keys = Object.keys(process.env);
+  for (const s of suffixes) {
+    const k = keys.find((name) => name.endsWith(s));
+    if (k && process.env[k]) return process.env[k];
+  }
+  return '';
+}
+const kvUrl = () => resolveEnv(['KV_REST_API_URL', 'UPSTASH_REDIS_REST_URL']);
+const kvToken = () => resolveEnv(['KV_REST_API_TOKEN', 'UPSTASH_REDIS_REST_TOKEN']);
 
 const memBuckets = new Map(); // key -> [timestamps] (in-memory fallback)
 let memDay = -1, memDayCount = 0;
