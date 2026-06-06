@@ -201,17 +201,22 @@
   .lesson-status svg { width: 24px; height: 24px; }
 
   /* ---------- Lesson overlay ---------- */
+  /* ---------- Lesson scaffold: a reusable 3-region template ----------
+     Every lesson uses the SAME structure so regions never conflict:
+       .lesson-top     (header) -> fixed, never scrolls
+       .lesson-scroll  (body)   -> flexes + scrolls; holds intro / stage / feedback
+       .lesson-actions (footer) -> pinned to the bottom; the primary button lives here
+     A new lesson only has to fill these regions. */
   .overlay {
     position: fixed; inset: 0; z-index: 50; display: none;
     background: var(--navy-deep);
     max-width: 480px; margin: 0 auto;
-    overflow-y: auto;
   }
-  .overlay.show { display: block; animation: slideUp .35s ease; }
+  .overlay.show { display: flex; flex-direction: column; animation: slideUp .35s ease; }
   @keyframes slideUp { from{transform:translateY(30px); opacity:0} to{transform:translateY(0); opacity:1} }
 
   .lesson-top {
-    position: sticky; top: 0; z-index: 5;
+    flex: 0 0 auto; z-index: 5;
     display: flex; align-items: center; gap: 12px;
     padding: 16px 18px; background: rgba(10,22,40,.85); backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--navy-line);
@@ -223,7 +228,30 @@
   }
   .lesson-top h2 { font-family: 'Baloo 2'; font-weight: 700; font-size: 17px; }
 
-  .lesson-content { padding: 20px 20px 40px; }
+  /* Region 2: scrollable body. Lays its sub-regions out top-to-bottom.
+     (Named .lesson-scroll, not .lesson-body, to avoid colliding with the
+     lesson-card text column which already uses .lesson-body.) */
+  .lesson-scroll {
+    flex: 1 1 auto; overflow-y: auto;
+    padding: 20px 20px 16px;
+    display: flex; flex-direction: column;
+  }
+  /* Designated sub-regions every lesson fills, stacked in visual order:
+     .lesson-intro (Webo speech) -> .lesson-stage (interactive game) -> .feedback (tip). */
+  .lesson-intro { flex: 0 0 auto; }
+  /* The interactive game; sizes to its content. Top padding gives variable-height
+     stage content reliable clearance from the intro/header above it. */
+  .lesson-stage { flex: 0 0 auto; padding-top: 8px; }
+
+  /* Region 3: pinned action footer. Primary button is always visible here. */
+  .lesson-actions {
+    flex: 0 0 auto;
+    padding: 14px 20px calc(14px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--navy-line);
+    background: rgba(10,22,40,.92); backdrop-filter: blur(10px);
+  }
+  .lesson-actions:empty { display: none; }
+  .lesson-actions .btn { margin-top: 0; }
 
   .speech {
     display: flex; gap: 12px; align-items: flex-start; margin-bottom: 22px;
@@ -273,8 +301,8 @@
   .jar-game { display: flex; justify-content: space-around; gap: 8px; margin: 4px 0 16px; }
   .jar-col { flex: 1; text-align: center; }
   .jar-big {
-    height: 120px; border: 3px solid var(--cream); border-top: none;
-    border-radius: 6px 6px 14px 14px; position: relative; overflow: hidden;
+    height: 120px; border: 3px solid var(--cream);
+    border-radius: 14px; position: relative; overflow: hidden;
     background: rgba(255,255,255,.03); cursor: pointer; transition: transform .12s;
   }
   .jar-big:active { transform: scale(.96); }
@@ -284,7 +312,7 @@
   .jar-col.grow .jar-fill { background: linear-gradient(var(--green), #3fae5c); }
   .jar-label { font-family: 'Baloo 2'; font-weight: 700; font-size: 13px; margin-top: 8px; }
   .jar-amt { font-size: 12px; color: var(--text-dim); font-weight: 700; }
-  .coins-left { text-align: center; font-family: 'Baloo 2'; font-weight: 700; font-size: 15px; margin-bottom: 12px; }
+  .coins-left { text-align: center; font-family: 'Baloo 2'; font-weight: 700; font-size: 15px; margin-bottom: 24px; }
   .coins-left b { color: var(--orange); font-size: 20px; }
 
   /* Penny slider */
@@ -471,7 +499,8 @@
       <button class="back-btn" @click="closeOverlay()">&larr;</button>
       <h2 x-text="overlayTitle">Lesson</h2>
     </div>
-    <div class="lesson-content" x-ref="ovContent"></div>
+    <div class="lesson-scroll" x-ref="ovBody"></div>
+    <div class="lesson-actions" x-ref="ovActions"></div>
   </div>
 
   <!-- REWARD -->
@@ -486,7 +515,7 @@
   </div>
 
   <!-- ASK WEBO FAB -->
-  <button class="ask-fab" @click="openChat()">
+  <button class="ask-fab" @click="openChat()" x-show="!overlayOpen && !chatOpen" x-cloak>
     <span class="fab-webo" x-html="weboSvg"></span> Ask Webo
   </button>
 
@@ -623,12 +652,20 @@ function weboWorld() {
       this.overlayTitle = this.lessons[i].name;
       this.overlayOpen = true;
       this.$nextTick(() => {
-        this.$refs.ovContent.parentElement.scrollTop = 0;
         const flow = { jars: this.lessonJars, penny: this.lessonPenny, seeds: this.lessonSeeds }[this.lessons[i].id];
         flow.call(this);
       });
     },
     closeOverlay() { this.overlayOpen = false; },
+
+    // Render one lesson "screen" into the scaffold: `bodyHtml` fills the scrollable
+    // body (intro -> stage -> feedback sub-regions), `actionsHtml` fills the pinned
+    // footer (the primary button). A new lesson just calls this with the two slots.
+    renderStep(bodyHtml, actionsHtml) {
+      this.$refs.ovBody.innerHTML = bodyHtml;
+      this.$refs.ovActions.innerHTML = actionsHtml || '';
+      this.$refs.ovBody.scrollTop = 0;
+    },
 
     // ---------- completion (idempotent: re-finishing never awards a 2nd star) ----------
     complete(i, text) {
@@ -652,26 +689,29 @@ function weboWorld() {
       const self = this;
       let coins = 6;
       const jars = { spend: 0, save: 0, grow: 0 };
-      this.$refs.ovContent.innerHTML = `
-        ${this.speech("You earned <b>6 gold coins</b> for helping out! \u{1FA99} Now, where should they go? Tap a jar to drop a coin in!")}
-        <div class="coins-left">Coins left: <b id="coinsLeft">6</b></div>
-        <div class="jar-game">
-          <div class="jar-col spend" data-j="spend"><div class="jar-big"><div class="jar-fill" style="height:0"></div></div><div class="jar-label" style="color:var(--red)">SPEND</div><div class="jar-amt" id="amt-spend">0 coins</div></div>
-          <div class="jar-col save" data-j="save"><div class="jar-big"><div class="jar-fill" style="height:0"></div></div><div class="jar-label" style="color:var(--teal)">SAVE</div><div class="jar-amt" id="amt-save">0 coins</div></div>
-          <div class="jar-col grow" data-j="grow"><div class="jar-big"><div class="jar-fill" style="height:0"></div></div><div class="jar-label" style="color:var(--green)">GROW</div><div class="jar-amt" id="amt-grow">0 coins</div></div>
+      this.renderStep(`
+        <div class="lesson-intro">${this.speech("You earned <b>6 gold coins</b> for helping out! \u{1FA99} Now, where should they go? Tap a jar to drop a coin in!")}</div>
+        <div class="lesson-stage">
+          <div class="coins-left">Coins left: <b id="coinsLeft">6</b></div>
+          <div class="jar-game">
+            <div class="jar-col spend" data-j="spend"><div class="jar-big"><div class="jar-fill" style="height:0"></div></div><div class="jar-label" style="color:var(--red)">SPEND</div><div class="jar-amt" id="amt-spend">0 coins</div></div>
+            <div class="jar-col save" data-j="save"><div class="jar-big"><div class="jar-fill" style="height:0"></div></div><div class="jar-label" style="color:var(--teal)">SAVE</div><div class="jar-amt" id="amt-save">0 coins</div></div>
+            <div class="jar-col grow" data-j="grow"><div class="jar-big"><div class="jar-fill" style="height:0"></div></div><div class="jar-label" style="color:var(--green)">GROW</div><div class="jar-amt" id="amt-grow">0 coins</div></div>
+          </div>
         </div>
         <div class="feedback info show" style="display:block">\u{1F4A1} <b>Spend</b> is for fun stuff now. <b>Save</b> is for something bigger soon. <b>Grow</b> is money that makes MORE money later!</div>
-        <button class="btn" id="jarDone" disabled style="margin-top:16px">Drop all your coins first</button>
-      `;
-      const cl = this.$refs.ovContent.querySelector('#coinsLeft');
-      const btn = this.$refs.ovContent.querySelector('#jarDone');
-      this.$refs.ovContent.querySelectorAll('.jar-col').forEach(col => {
+      `, `<button class="btn" id="jarDone" disabled>Drop all your coins first</button>`);
+
+      const body = this.$refs.ovBody;
+      const cl = body.querySelector('#coinsLeft');
+      const btn = this.$refs.ovActions.querySelector('#jarDone');
+      body.querySelectorAll('.jar-col').forEach(col => {
         col.querySelector('.jar-big').onclick = () => {
           if (coins <= 0) return;
           const j = col.dataset.j; jars[j]++; coins--;
           cl.textContent = coins;
           col.querySelector('.jar-fill').style.height = Math.min(jars[j] * 16, 100) + '%';
-          self.$refs.ovContent.querySelector('#amt-' + j).textContent = jars[j] + ' coins';
+          body.querySelector('#amt-' + j).textContent = jars[j] + ' coins';
           if (coins === 0) { btn.disabled = false; btn.textContent = 'See what Webo thinks →'; }
         };
       });
@@ -683,32 +723,34 @@ function weboWorld() {
           msg = "Ooh, you spent it all on fun! That is okay sometimes, but if you <b>save</b> and <b>grow</b> a little too, you will have even more later. Let us remember that! \u{1F49B}";
         else
           msg = "Nice choices! The big secret is that the <b>Grow</b> jar is magic. Keep some coins there and they turn into MORE coins over time. You will see how in the next lesson! ✨";
-        self.$refs.ovContent.innerHTML = self.speech(msg) + `<button class="btn" id="finJar">Finish Lesson ⭐</button>`;
-        self.$refs.ovContent.querySelector('#finJar').onclick = () => self.complete(0, "You learned the 3 Jars! Webo's world just got its first jars. \u{1FAD9}");
+        self.renderStep(`<div class="lesson-intro">${self.speech(msg)}</div>`, `<button class="btn" id="finJar">Finish Lesson ⭐</button>`);
+        self.$refs.ovActions.querySelector('#finJar').onclick = () => self.complete(0, "You learned the 3 Jars! Webo's world just got its first jars. \u{1FAD9}");
       };
     },
 
     // ===== LESSON 2: Magic Penny =====
     lessonPenny() {
       const self = this;
-      this.$refs.ovContent.innerHTML = `
-        ${this.speech("Here is a brain-bender! \u{1F92F} Would you rather have <b>$1,000,000 today</b>... or <b>one penny</b> that <b>doubles every day</b> for 30 days? Slide to find out what the penny becomes!")}
-        <div class="penny-display">
-          <div class="penny-day">Day <span id="pDay">1</span></div>
-          <div class="penny-val" id="pVal">$0.01</div>
-          <div class="penny-vs" id="pVs">vs $1,000,000 today</div>
+      this.renderStep(`
+        <div class="lesson-intro">${this.speech("Here is a brain-bender! \u{1F92F} Would you rather have <b>$1,000,000 today</b>... or <b>one penny</b> that <b>doubles every day</b> for 30 days? Slide to find out what the penny becomes!")}</div>
+        <div class="lesson-stage">
+          <div class="penny-display">
+            <div class="penny-day">Day <span id="pDay">1</span></div>
+            <div class="penny-val" id="pVal">$0.01</div>
+            <div class="penny-vs" id="pVs">vs $1,000,000 today</div>
+          </div>
+          <div class="penny-bar-wrap" id="pBars"></div>
+          <input type="range" min="1" max="30" value="1" id="pSlider">
         </div>
-        <div class="penny-bar-wrap" id="pBars"></div>
-        <input type="range" min="1" max="30" value="1" id="pSlider">
         <div class="feedback info show" style="display:block" id="pFb">Start at day 1 and slide all the way to day 30...</div>
-        <button class="btn" id="pDone" style="margin-top:16px" disabled>Slide to day 30 first</button>
-      `;
-      const root = this.$refs.ovContent;
+      `, `<button class="btn" id="pDone" disabled>Slide to day 30 first</button>`);
+      const root = this.$refs.ovBody;
       const bars = root.querySelector('#pBars');
       for (let i = 0; i < 30; i++) { const b = document.createElement('div'); b.className = 'penny-bar'; b.style.height = '2px'; bars.appendChild(b); }
       const barEls = [...bars.children];
       const slider = root.querySelector('#pSlider');
-      const pVal = root.querySelector('#pVal'), pDay = root.querySelector('#pDay'), pFb = root.querySelector('#pFb'), pDone = root.querySelector('#pDone'), pVs = root.querySelector('#pVs');
+      const pVal = root.querySelector('#pVal'), pDay = root.querySelector('#pDay'), pFb = root.querySelector('#pFb'), pVs = root.querySelector('#pVs');
+      const pDone = this.$refs.ovActions.querySelector('#pDone');
       let reached30 = false;
       const val = (d) => 0.01 * Math.pow(2, d - 1);
       const fmt = (n) => n >= 1000 ? '$' + Math.round(n).toLocaleString() : '$' + n.toFixed(2);
@@ -734,17 +776,18 @@ function weboWorld() {
     // ===== LESSON 3: Planting Seeds =====
     lessonSeeds() {
       const self = this;
-      this.$refs.ovContent.innerHTML = `
-        ${this.speech("Time to plant! \u{1F331} You have <b>6 seeds</b>. Tap each patch to plant one. Here is the secret: some seeds grow big, some grow slow, and some... will not grow at all. Nobody knows which! So what should we do?")}
-        <div class="seed-field" id="seedField"></div>
+      this.renderStep(`
+        <div class="lesson-intro">${this.speech("Time to plant! \u{1F331} You have <b>6 seeds</b>. Tap each patch to plant one. Here is the secret: some seeds grow big, some grow slow, and some... will not grow at all. Nobody knows which! So what should we do?")}</div>
+        <div class="lesson-stage">
+          <div class="seed-field" id="seedField"></div>
+        </div>
         <div class="feedback info show" style="display:block" id="seedFb">Plant all 6 seeds and see what happens! \u{1F33E}</div>
-        <button class="btn" id="seedDone" disabled style="margin-top:8px">Plant all 6 seeds</button>
-      `;
-      const root = this.$refs.ovContent;
+      `, `<button class="btn" id="seedDone" disabled>Plant all 6 seeds</button>`);
+      const root = this.$refs.ovBody;
       const field = root.querySelector('#seedField');
       const outcomes = this.shuffle(['grown', 'grown', 'slow', 'grown', 'failed', 'slow']);
       let planted = 0;
-      const fb = root.querySelector('#seedFb'), btn = root.querySelector('#seedDone');
+      const fb = root.querySelector('#seedFb'), btn = this.$refs.ovActions.querySelector('#seedDone');
       for (let i = 0; i < 6; i++) {
         const s = document.createElement('div'); s.className = 'seed'; s.textContent = '\u{1F7EB}';
         s.onclick = () => {
@@ -766,9 +809,11 @@ function weboWorld() {
         field.appendChild(s);
       }
       btn.onclick = () => {
-        self.$refs.ovContent.innerHTML = self.speech("Here is the big idea: because we planted <b>lots of different seeds</b>, it did not matter that one failed. The others still grew! \u{1F333}<br><br>Smart money helpers call this <b>not putting all your eggs in one basket</b>. Spreading out keeps you safe. You are a natural! \u{1F31F}")
-          + `<button class="btn" id="finSeed">Finish Lesson ⭐</button>`;
-        self.$refs.ovContent.querySelector('#finSeed').onclick = () => self.complete(2, "You learned to spread things out! Webo's rocket is fueled and ready. \u{1F680}");
+        self.renderStep(
+          `<div class="lesson-intro">${self.speech("Here is the big idea: because we planted <b>lots of different seeds</b>, it did not matter that one failed. The others still grew! \u{1F333}<br><br>Smart money helpers call this <b>not putting all your eggs in one basket</b>. Spreading out keeps you safe. You are a natural! \u{1F31F}")}</div>`,
+          `<button class="btn" id="finSeed">Finish Lesson ⭐</button>`
+        );
+        self.$refs.ovActions.querySelector('#finSeed').onclick = () => self.complete(2, "You learned to spread things out! Webo's rocket is fueled and ready. \u{1F680}");
       };
     },
 
