@@ -22,13 +22,16 @@
 
 const MODEL = process.env.WEBO_MODEL || 'claude-sonnet-4-5';
 const MODERATION_MODEL = process.env.WEBO_MODERATION_MODEL || 'claude-haiku-4-5';
-const RATE_MAX = parseInt(process.env.WEBO_RATE_MAX || '30', 10);
-const RATE_WINDOW = parseInt(process.env.WEBO_RATE_WINDOW || '600', 10);
+const RATE_MAX = parseInt(process.env.WEBO_RATE_MAX || '30', 10);            // per child/session per window
+const RATE_WINDOW = parseInt(process.env.WEBO_RATE_WINDOW || '600', 10);     // seconds
+const IP_RATE_MAX = parseInt(process.env.WEBO_IP_RATE_MAX || '150', 10);     // per-IP backstop (shared IPs: schools/homes) per window
+const GLOBAL_DAILY_MAX = parseInt(process.env.WEBO_GLOBAL_DAILY_MAX || '5000', 10); // global daily request ceiling (cost cap)
 
 // Friendly, kid-safe canned lines. No em dashes in any user-facing copy.
 const WEBO_REDIRECT = 'Ooh, let us keep it about money and saving! \u{1F916} Try asking me how money grows, or what a piggy bank is for!';
 const WEBO_FALLBACK = 'Hmm, my circuits got a little fuzzy! \u{1F916} Try asking me again in a fun money way!';
 const WEBO_BUSY = 'Whew, lots of questions! \u{1F4A8} Give me a tiny moment, then ask me again!';
+const WEBO_RESTING = 'Webo is taking a little rest right now! \u{1F634} Please come back and ask me again a bit later.';
 const WEBO_WARMING = 'I am getting ready to chat! \u{1F916} Ask me again in a little bit!';
 
 const SYSTEM_PROMPT =
@@ -123,42 +126,64 @@ async function isContentUnsafe(apiKey, text) {
   return !safe;
 }
 
-// Per-instance fallback bucket (best effort; not durable across cold starts/instances).
-const memBucket = new Map();
+// ---- Rate limiting ----------------------------------------------------------
+// Durable via Vercel KV / Upstash Redis when configured (KV_REST_API_URL/TOKEN or
+// UPSTASH_REDIS_REST_URL/TOKEN), else best-effort in-memory per instance. Three
+// layers, all FAIL-OPEN (never block a child over a transient KV error):
+//   1. per-session  (per browser, the primary budget so shared IPs are not over-blocked)
+//   2. per-IP       (a higher backstop against a single-IP flood)
+//   3. global daily (a cost ceiling / circuit breaker bounding total spend)
+const kvUrl = () => process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+const kvToken = () => process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
 
-async function rateOk(ip) {
-  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+const memBuckets = new Map(); // key -> [timestamps] (in-memory fallback)
+let memDay = -1, memDayCount = 0;
 
-  if (url && token) {
-    // Durable sliding-window-ish limit via Upstash REST: INCR + EXPIRE on first hit.
-    const key = `webo:rl:${ip}`;
-    try {
-      const incr = await fetch(`${url}/incr/${encodeURIComponent(key)}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const { result } = await incr.json();
-      if (result === 1) {
-        await fetch(`${url}/expire/${encodeURIComponent(key)}/${RATE_WINDOW}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-      }
-      return result <= RATE_MAX;
-    } catch (e) {
-      return true; // fail open: never block a child over a transient KV error
+// INCR a KV key (set TTL on first hit). Returns the post-incr count, or null when
+// KV is not configured or errors (caller then uses the in-memory fallback / fails open).
+async function kvIncr(key, ttl) {
+  const url = kvUrl(), token = kvToken();
+  if (!url || !token) return null;
+  try {
+    const r = await fetch(`${url}/incr/${encodeURIComponent(key)}`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!r.ok) return null;
+    const { result } = await r.json();
+    if (result === 1) {
+      await fetch(`${url}/expire/${encodeURIComponent(key)}/${ttl}`, { headers: { Authorization: `Bearer ${token}` } });
     }
+    return typeof result === 'number' ? result : null;
+  } catch (e) {
+    return null;
   }
+}
 
-  // No KV configured -> best-effort in-memory.
+// Windowed limit. true = allowed. KV-durable, else in-memory per instance.
+async function limitOk(bucket, max, window) {
+  const count = await kvIncr(`webo:rl:${bucket}`, window);
+  if (count !== null) return count <= max;
   const now = Date.now() / 1000;
-  const arr = (memBucket.get(ip) || []).filter((t) => t > now - RATE_WINDOW);
-  if (arr.length >= RATE_MAX) {
-    memBucket.set(ip, arr);
-    return false;
-  }
+  const arr = (memBuckets.get(bucket) || []).filter((t) => t > now - window);
+  if (arr.length >= max) { memBuckets.set(bucket, arr); return false; }
   arr.push(now);
-  memBucket.set(ip, arr);
+  memBuckets.set(bucket, arr);
   return true;
+}
+
+// Global daily request ceiling (cost cap / circuit breaker). true = under the ceiling.
+async function underGlobalCeiling() {
+  const day = Math.floor(Date.now() / 86400000);
+  const count = await kvIncr(`webo:cost:${day}`, 90000); // ~25h TTL
+  if (count !== null) return count <= GLOBAL_DAILY_MAX;
+  if (memDay !== day) { memDay = day; memDayCount = 0; }
+  memDayCount += 1;
+  return memDayCount <= GLOBAL_DAILY_MAX;
+}
+
+// Sanitize the client-supplied session id (untrusted): short, [A-Za-z0-9_-] only.
+function cleanClientId(v) {
+  if (typeof v !== 'string') return '';
+  const s = v.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40);
+  return s;
 }
 
 module.exports = async function handler(req, res) {
@@ -200,7 +225,24 @@ module.exports = async function handler(req, res) {
   const lastUser = clean[clean.length - 1].content;
 
   const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown';
-  if (!(await rateOk(ip))) return say(WEBO_BUSY, 429);
+  const clientId = cleanClientId(body && body.clientId);
+
+  // Layer 1: per-session (per browser). The primary budget so kids sharing one IP
+  // (school/home) each get their own allowance instead of competing.
+  if (clientId && !(await limitOk(`s:${clientId}`, RATE_MAX, RATE_WINDOW))) {
+    console.warn('[webo] rate-limited: session');
+    return say(WEBO_BUSY, 429);
+  }
+  // Layer 2: per-IP backstop against a single-IP flood (higher cap to allow several kids).
+  if (!(await limitOk(`ip:${ip}`, IP_RATE_MAX, RATE_WINDOW))) {
+    console.warn('[webo] rate-limited: ip');
+    return say(WEBO_BUSY, 429);
+  }
+  // Layer 3: global daily cost ceiling (circuit breaker bounding total spend).
+  if (!(await underGlobalCeiling())) {
+    console.warn('[webo] rate-limited: global-ceiling');
+    return say(WEBO_RESTING, 429);
+  }
 
   // Input moderation (two-layer): do not call the answer model on unsafe input; redirect.
   if (await isContentUnsafe(apiKey, lastUser)) return say(WEBO_REDIRECT);
