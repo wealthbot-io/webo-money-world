@@ -7,7 +7,7 @@ content. Strictly educational: no real money, no RIAs, no personalized advice.
 
 A working standalone micro-app:
 
-- **`public/index.html`** — the front-end. Refactored into an **Alpine.js** component.
+- **`index.html`** — the front-end. Refactored into an **Alpine.js** component.
   Three playable lessons (Three Jars, Magic Penny, Planting Seeds), a state-driven
   World hub (props pop in as lessons complete), progress dots, and a star counter.
   Progress **persists in `localStorage`**; lessons **lock** until the previous one is
@@ -35,7 +35,7 @@ cp .env.example .env          # then put your real ANTHROPIC_API_KEY in .env
 Front-end only (no key needed) works with any static server:
 
 ```bash
-npx serve public
+npx serve
 ```
 
 The three lessons, world, and persistence all work with **no key**. Setting
@@ -45,7 +45,7 @@ rest of the app stays fully usable.
 
 ## Deploying to Vercel
 
-The repo is Vercel-ready (`vercel.json`): `public/` is the static root, `api/ask.js`
+The repo is Vercel-ready (`vercel.json`): the repo root is the static site, `api/ask.js`
 is a serverless function, `prototype/` and local files are excluded via `.vercelignore`.
 
 ```bash

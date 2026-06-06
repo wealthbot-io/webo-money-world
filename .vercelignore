@@ -1,6 +1,11 @@
-# Keep the Vercel deploy lean: ship public/ (static) + api/ (functions) only.
+# Deploy only the web app: index.html, vendor/, api/, vercel.json.
+# Everything else (reference prototype, docs, local dev) stays out of the deployment.
 prototype/
 run.sh
+README.md
 HANDOFF.md
+.env.example
+.gitignore
 *.log
 .env
+.vercel

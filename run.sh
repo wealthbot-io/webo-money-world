@@ -20,7 +20,6 @@ fi
 echo "Vercel CLI not found. Serving the FRONT-END ONLY from ./public (Ask Webo needs 'vercel dev' or a deploy)."
 echo "Install the Vercel CLI for the full stack:  npm i -g vercel"
 PORT="${PORT:-8000}"
-cd public
 if command -v npx >/dev/null 2>&1; then
   echo "Front-end at http://localhost:${PORT}/"
   exec npx --yes serve -l "${PORT}"
