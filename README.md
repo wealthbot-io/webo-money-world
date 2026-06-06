@@ -84,3 +84,13 @@ rate limiter (wired but optional), accounts/login, analytics. These are the next
 
 Deploy target is **Vercel** (see above): static front-end on the edge + the Node
 `/api/ask` function. The Anthropic key lives only in Vercel env vars.
+
+## Contributing / deploy workflow
+
+`main` is protected: changes land via pull request, and Vercel deploys automatically.
+
+1. Branch off `main` (`git checkout -b feat/my-change`).
+2. Open a PR. Vercel builds a **preview deployment** and posts its URL + a status check on the PR.
+3. Merge to `main`. Vercel deploys to **production** (https://webo-money-world.vercel.app).
+
+Force pushes and branch deletion on `main` are disabled, and the Vercel preview check must pass before a PR can merge.
