@@ -333,14 +333,16 @@
 
   /* Ask Webo chat */
   .ask-fab {
-    position: fixed; bottom: 20px; right: calc(50% - 240px + 18px); z-index: 40;
+    /* Sit in the right gutter BESIDE the 480px column on desktop (240px half-column
+       + 72px gap); clamp to 16px from the edge on narrow screens where there is no gutter. */
+    position: fixed; bottom: 20px; right: max(16px, calc(50% - 312px)); z-index: 40;
     background: linear-gradient(145deg, var(--orange-bright), var(--orange-deep));
     color: #2a1a00; border: none; border-radius: 26px; padding: 13px 18px 13px 14px;
     font-family: 'Baloo 2'; font-weight: 700; font-size: 14px; cursor: pointer;
     display: flex; align-items: center; gap: 8px; box-shadow: 0 8px 22px rgba(245,166,35,.4);
     animation: bob 3.4s ease-in-out infinite;
   }
-  @media (max-width: 480px){ .ask-fab { right: 18px; } }
+  @media (max-width: 480px){ .ask-fab { right: 16px; } }
   .ask-fab .fab-webo { width: 30px; height: 30px; }
   .ask-fab .fab-webo svg { width: 100%; }
 
