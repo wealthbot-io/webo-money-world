@@ -12,10 +12,11 @@ A working standalone micro-app:
   World hub (props pop in as lessons complete), progress dots, and a star counter.
   Progress **persists in `localStorage`**; lessons **lock** until the previous one is
   done; completion is **idempotent** (re-finishing never awards a second star).
-- **`public/api/ask.php`** — the **Ask Webo** server-side proxy. Holds the Anthropic
-  API key server-side (never shipped to the browser), applies starter safety
-  guardrails (input + output moderation, per-IP rate limiting), and returns short,
-  kid-friendly replies.
+- **`api/ask.js`** — the **Ask Webo** proxy as a **Vercel Node serverless function**
+  (`POST /api/ask`). Holds the Anthropic API key server-side (never shipped to the
+  browser), applies starter safety guardrails (input + output moderation, per-IP rate
+  limiting), and returns short, kid-friendly replies. Rate limiting uses Upstash/Vercel
+  KV when configured, else best-effort per-instance.
 - **`prototype/webo-money-world.html`** — the original single-file visual prototype
   (kept for reference).
 
@@ -23,16 +24,43 @@ See **HANDOFF.md** for the full build brief and the definition of done.
 
 ## Running it locally
 
-Requires PHP 8 (`php -v`).
+Full stack (lessons + Ask Webo) uses the Vercel CLI so the `/api/ask` function runs:
 
 ```bash
+npm i -g vercel               # once
 cp .env.example .env          # then put your real ANTHROPIC_API_KEY in .env
-./run.sh                      # serves http://localhost:8000/
+./run.sh                      # -> vercel dev on http://localhost:3000
+```
+
+Front-end only (no key needed) works with any static server:
+
+```bash
+cd public && python3 -m http.server 8000
 ```
 
 The three lessons, world, and persistence all work with **no key**. Setting
-`ANTHROPIC_API_KEY` lights up the **Ask Webo** chat. Without a key, Ask Webo replies
-with a friendly "getting ready" message and the rest of the app stays fully usable.
+`ANTHROPIC_API_KEY` lights up the **Ask Webo** chat. Without a key (or running
+front-end-only), Ask Webo replies with a friendly "getting ready" message and the
+rest of the app stays fully usable.
+
+## Deploying to Vercel
+
+The repo is Vercel-ready (`vercel.json`): `public/` is the static root, `api/ask.js`
+is a serverless function, `prototype/` and local files are excluded via `.vercelignore`.
+
+```bash
+vercel            # link the project (first run) + deploy a preview
+vercel --prod     # promote to production
+```
+
+Then set environment variables in the Vercel dashboard (Project -> Settings ->
+Environment Variables):
+
+- `ANTHROPIC_API_KEY` (required)
+- `WEBO_MODEL` (optional)
+- For durable rate limiting across instances, add a Vercel KV / Upstash Redis store
+  and its `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` (or `KV_REST_API_URL`
+  + `KV_REST_API_TOKEN`). Without it, rate limiting is best-effort per-instance.
 
 ## Status against the definition of done (HANDOFF.md §6)
 
@@ -50,6 +78,9 @@ with a friendly "getting ready" message and the rest of the app stays fully usab
 
 ## Not in this pass (deliberately)
 
-Deploy (Dockerfile / Cloud Run / Terraform), a real moderation model, COPPA counsel
-sign-off, accounts/login, analytics. These are the next steps once the MVP direction
-is confirmed.
+A **real moderation model** (the regex screen is a responsible starter, not enough for
+under-13s), **COPPA counsel sign-off** before any public launch, a durable KV-backed
+rate limiter (wired but optional), accounts/login, analytics. These are the next steps.
+
+Deploy target is **Vercel** (see above): static front-end on the edge + the Node
+`/api/ask` function. The Anthropic key lives only in Vercel env vars.

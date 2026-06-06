@@ -1,18 +1,33 @@
 #!/usr/bin/env bash
-# Webo's Money World — local dev server.
-# Loads .env (for ANTHROPIC_API_KEY etc.) and serves ./public with PHP's built-in server.
-# The front-end is at  http://localhost:8000/  and the proxy at  /api/ask.php
+# Webo's Money World — local dev.
+#
+# Full stack (lessons + Ask Webo): needs the Vercel CLI so the /api/ask Node
+# function runs locally. Put ANTHROPIC_API_KEY in .env first (copy .env.example).
+#
+#   npm i -g vercel      # once
+#   ./run.sh             # -> vercel dev on http://localhost:3000
+#
+# Front-end only (lessons + world; Ask Webo shows a friendly "getting ready"
+# message): any static server works, e.g.  (cd public && python3 -m http.server 8000)
 set -euo pipefail
 cd "$(dirname "$0")"
 
-if [[ -f .env ]]; then
-  set -a; source .env; set +a
+if command -v vercel >/dev/null 2>&1; then
+  echo "Starting full stack via 'vercel dev' (loads .env, serves public/ + /api/ask)..."
+  exec vercel dev
 fi
 
-if [[ -z "${ANTHROPIC_API_KEY:-}" ]]; then
-  echo "warning: ANTHROPIC_API_KEY is not set. The lessons work, but 'Ask Webo' will reply with a friendly 'getting ready' message until you set it (copy .env.example to .env)."
-fi
-
+echo "Vercel CLI not found. Serving the FRONT-END ONLY from ./public (Ask Webo needs 'vercel dev' or a deploy)."
+echo "Install the Vercel CLI for the full stack:  npm i -g vercel"
 PORT="${PORT:-8000}"
-echo "Webo's Money World running at http://localhost:${PORT}/"
-exec php -S "localhost:${PORT}" -t public
+cd public
+if command -v python3 >/dev/null 2>&1; then
+  echo "Front-end at http://localhost:${PORT}/"
+  exec python3 -m http.server "${PORT}"
+elif command -v php >/dev/null 2>&1; then
+  echo "Front-end at http://localhost:${PORT}/"
+  exec php -S "localhost:${PORT}"
+else
+  echo "No static server found (need python3 or php)."
+  exit 1
+fi

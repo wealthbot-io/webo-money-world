@@ -815,7 +815,7 @@ function weboWorld() {
       this.chatBusy = true;
       this.scrollChat();
       try {
-        const res = await fetch('/api/ask.php', {
+        const res = await fetch('/api/ask', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           // send only the recent turns for context; the server holds the system prompt + key

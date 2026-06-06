@@ -1,0 +1,6 @@
+# Keep the Vercel deploy lean: ship public/ (static) + api/ (functions) only.
+prototype/
+run.sh
+HANDOFF.md
+*.log
+.env
