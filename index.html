@@ -239,7 +239,9 @@
   /* Designated sub-regions every lesson fills, stacked in visual order:
      .lesson-intro (Webo speech) -> .lesson-stage (interactive game) -> .feedback (tip). */
   .lesson-intro { flex: 0 0 auto; }
-  .lesson-stage { flex: 0 0 auto; }      /* the interactive game; sizes to its content */
+  /* The interactive game; sizes to its content. Top padding gives variable-height
+     stage content reliable clearance from the intro/header above it. */
+  .lesson-stage { flex: 0 0 auto; padding-top: 8px; }
 
   /* Region 3: pinned action footer. Primary button is always visible here. */
   .lesson-actions {
@@ -310,7 +312,7 @@
   .jar-col.grow .jar-fill { background: linear-gradient(var(--green), #3fae5c); }
   .jar-label { font-family: 'Baloo 2'; font-weight: 700; font-size: 13px; margin-top: 8px; }
   .jar-amt { font-size: 12px; color: var(--text-dim); font-weight: 700; }
-  .coins-left { text-align: center; font-family: 'Baloo 2'; font-weight: 700; font-size: 15px; margin-bottom: 12px; }
+  .coins-left { text-align: center; font-family: 'Baloo 2'; font-weight: 700; font-size: 15px; margin-bottom: 24px; }
   .coins-left b { color: var(--orange); font-size: 20px; }
 
   /* Penny slider */
