@@ -21,13 +21,13 @@ echo "Vercel CLI not found. Serving the FRONT-END ONLY from ./public (Ask Webo n
 echo "Install the Vercel CLI for the full stack:  npm i -g vercel"
 PORT="${PORT:-8000}"
 cd public
-if command -v python3 >/dev/null 2>&1; then
+if command -v npx >/dev/null 2>&1; then
+  echo "Front-end at http://localhost:${PORT}/"
+  exec npx --yes serve -l "${PORT}"
+elif command -v python3 >/dev/null 2>&1; then
   echo "Front-end at http://localhost:${PORT}/"
   exec python3 -m http.server "${PORT}"
-elif command -v php >/dev/null 2>&1; then
-  echo "Front-end at http://localhost:${PORT}/"
-  exec php -S "localhost:${PORT}"
 else
-  echo "No static server found (need python3 or php)."
+  echo "No static server found (install Node, then run again)."
   exit 1
 fi

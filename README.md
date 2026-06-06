@@ -35,7 +35,7 @@ cp .env.example .env          # then put your real ANTHROPIC_API_KEY in .env
 Front-end only (no key needed) works with any static server:
 
 ```bash
-cd public && python3 -m http.server 8000
+npx serve public
 ```
 
 The three lessons, world, and persistence all work with **no key**. Setting
