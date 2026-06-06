@@ -141,6 +141,9 @@
   .prop-rocket .flame { transform-origin: 50% 0; animation: flicker .35s infinite alternate; }
   @keyframes flicker { from{transform:scaleY(.8)} to{transform:scaleY(1.15)} }
 
+  .prop-basket { right: 24%; bottom: 40px; }
+  .prop-basket svg { width: 64px; height: 56px; filter: drop-shadow(0 6px 10px rgba(0,0,0,.4)); }
+
   /* ---------- Webo character (pure CSS/SVG) ---------- */
   .webo { width: 120px; position: relative; z-index: 3; margin-bottom: 30px;
     animation: bob 3.4s ease-in-out infinite; cursor: pointer; }
@@ -339,6 +342,13 @@
   .seed.failed { border-color: var(--red); background: rgba(255,123,107,.10); opacity: .7; }
   .seed.slow { border-color: var(--teal); background: rgba(79,209,197,.10); }
 
+  /* Needs vs Wants */
+  .nw-progress { text-align: center; font-family: 'Baloo 2'; font-weight: 700; font-size: 13px; color: var(--text-dim); margin-bottom: 12px; }
+  .nw-item { text-align: center; font-size: 72px; line-height: 1; margin: 6px 0 18px; }
+  .nw-name { font-family: 'Baloo 2'; font-weight: 700; font-size: 18px; color: var(--text); margin-top: 8px; }
+  .nw-choices { display: flex; gap: 12px; margin-bottom: 4px; }
+  .nw-choices .choice { flex: 1; text-align: center; font-family: 'Baloo 2'; }
+
   /* Reward modal */
   .reward {
     position: fixed; inset: 0; z-index: 80; display: none;
@@ -454,6 +464,17 @@
           <path d="M12 40 L4 52 L12 48Z" fill="#e08e0b"/>
           <path d="M28 40 L36 52 L28 48Z" fill="#e08e0b"/>
           <g class="flame"><path d="M14 46 L20 62 L26 46Z" fill="#ffb938"/><path d="M16 46 L20 56 L24 46Z" fill="#ff7b6b"/></g>
+        </svg>
+      </div>
+      <div class="prop prop-basket" :class="{ on: lessons[3].completed }">
+        <svg viewBox="0 0 70 60">
+          <circle cx="28" cy="22" r="8" fill="#ff7b6b"/>
+          <circle cx="44" cy="20" r="9" fill="#5ed47a"/>
+          <rect x="33" y="12" width="6" height="14" rx="3" fill="#f5a623"/>
+          <path d="M14 28 L56 28 L50 56 L20 56 Z" fill="#b9762e"/>
+          <path d="M13 28 L57 28 L55 34 L15 34 Z" fill="#e08e0b"/>
+          <path d="M22 38 L48 38 M21 46 L49 46" stroke="#8a5620" stroke-width="2" fill="none"/>
+          <path d="M22 28 Q35 8 48 28" stroke="#8a5620" stroke-width="3" fill="none"/>
         </svg>
       </div>
 
@@ -579,6 +600,7 @@ function weboWorld() {
       { id: 'jars',  no: 'LESSON 1', name: 'The Three Jars',  sub: 'Earning, spending & saving', icon: '\u{1FAD9}', completed: false },
       { id: 'penny', no: 'LESSON 2', name: 'The Magic Penny', sub: 'How money grows over time',  icon: '\u{1FA99}', completed: false },
       { id: 'seeds', no: 'LESSON 3', name: 'Planting Seeds',  sub: 'Why we spread money around', icon: '\u{1F331}', completed: false },
+      { id: 'needs', no: 'LESSON 4', name: 'Needs vs Wants',  sub: 'What we must have vs what is nice', icon: '\u{1F9FA}', completed: false },
     ],
 
     STORAGE_KEY: 'webo-money-world.v1',
@@ -652,7 +674,7 @@ function weboWorld() {
       this.overlayTitle = this.lessons[i].name;
       this.overlayOpen = true;
       this.$nextTick(() => {
-        const flow = { jars: this.lessonJars, penny: this.lessonPenny, seeds: this.lessonSeeds }[this.lessons[i].id];
+        const flow = { jars: this.lessonJars, penny: this.lessonPenny, seeds: this.lessonSeeds, needs: this.lessonNeeds }[this.lessons[i].id];
         flow.call(this);
       });
     },
@@ -815,6 +837,69 @@ function weboWorld() {
         );
         self.$refs.ovActions.querySelector('#finSeed').onclick = () => self.complete(2, "You learned to spread things out! Webo's rocket is fueled and ready. \u{1F680}");
       };
+    },
+
+    // ===== LESSON 4: Needs vs Wants =====
+    lessonNeeds() {
+      const self = this;
+      const items = this.shuffle([
+        { emoji: '\u{1F34E}', name: 'an apple',       need: true,  why: 'our bodies need food to grow strong' },
+        { emoji: '\u{1F9F8}', name: 'a teddy bear',    need: false, why: 'toys are fun, but we can live without them' },
+        { emoji: '\u{1F3E0}', name: 'a home',          need: true,  why: 'everyone needs a safe place to live' },
+        { emoji: '\u{1F36C}', name: 'candy',           need: false, why: 'it is yummy to want, but not something we need' },
+        { emoji: '\u{1F9E5}', name: 'a warm coat',     need: true,  why: 'we need warm clothes when it is cold' },
+        { emoji: '\u{1F3AE}', name: 'a video game',    need: false, why: 'it is fun to want, not a need' },
+      ]);
+      let score = 0;
+
+      const card = (i) => {
+        const it = items[i];
+        const isLast = i === items.length - 1;
+        self.renderStep(`
+          <div class="lesson-intro">${self.speech("Some things we <b>need</b> to live, and some are just nice to <b>want</b>. Tap the right basket for each one! \u{1F9FA}")}</div>
+          <div class="lesson-stage">
+            <div class="nw-progress">Item <b>${i + 1}</b> of ${items.length}</div>
+            <div class="nw-item">${it.emoji}<div class="nw-name">${it.name}</div></div>
+            <div class="nw-choices">
+              <button class="choice nw-need" data-need="true">\u{2705} Need</button>
+              <button class="choice nw-want" data-need="false">\u{2728} Want</button>
+            </div>
+            <div class="feedback" id="nwFb"></div>
+          </div>
+        `, `<button class="btn" id="nwNext" disabled>Pick Need or Want</button>`);
+
+        const body = self.$refs.ovBody;
+        const fb = body.querySelector('#nwFb');
+        const next = self.$refs.ovActions.querySelector('#nwNext');
+        body.querySelectorAll('.nw-choices .choice').forEach((b) => {
+          b.onclick = () => {
+            const chose = b.dataset.need === 'true';
+            body.querySelectorAll('.nw-choices .choice').forEach((x) => { x.disabled = true; });
+            body.querySelector(it.need ? '.nw-need' : '.nw-want').classList.add('correct');
+            const name = it.name.charAt(0).toUpperCase() + it.name.slice(1);
+            if (chose === it.need) {
+              score++;
+              fb.innerHTML = `Yes! \u{1F31F} ${name} is a <b>${it.need ? 'need' : 'want'}</b> because ${it.why}.`;
+              fb.className = 'feedback good show';
+            } else {
+              b.classList.add('wrong');
+              fb.innerHTML = `Good thinking! Actually ${it.name} is a <b>${it.need ? 'need' : 'want'}</b> because ${it.why}.`;
+              fb.className = 'feedback info show';
+            }
+            next.disabled = false;
+            next.textContent = isLast ? 'See what Webo thinks →' : 'Next →';
+          };
+        });
+        next.onclick = () => {
+          if (!isLast) { card(i + 1); return; }
+          self.renderStep(
+            `<div class="lesson-intro">${self.speech(`Awesome sorting! \u{1F9FA} You got <b>${score} of ${items.length}</b>. The big idea: <b>needs come first</b> (food, a home, warm clothes), then we can choose <b>wants</b> with what is left. \u{1F49B}`)}</div>`,
+            `<button class="btn" id="nwFin">Finish Lesson ⭐</button>`
+          );
+          self.$refs.ovActions.querySelector('#nwFin').onclick = () => self.complete(3, "You learned needs vs wants! A basket of goodies appeared in Webo's world. \u{1F9FA}");
+        };
+      };
+      card(0);
     },
 
     shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; },
