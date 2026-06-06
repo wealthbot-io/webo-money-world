@@ -21,6 +21,7 @@
 // input + output through a dedicated moderation model before launch. See HANDOFF.md.
 
 const MODEL = process.env.WEBO_MODEL || 'claude-sonnet-4-5';
+const MODERATION_MODEL = process.env.WEBO_MODERATION_MODEL || 'claude-haiku-4-5';
 const RATE_MAX = parseInt(process.env.WEBO_RATE_MAX || '30', 10);
 const RATE_WINDOW = parseInt(process.env.WEBO_RATE_WINDOW || '600', 10);
 
@@ -38,8 +39,21 @@ const SYSTEM_PROMPT =
   'or stocks to buy, and never discuss anything scary or not kid appropriate. If asked something off topic, ' +
   'gently steer back to money in a playful way. Do not use em dashes.';
 
-// Starter content screen. Conservative for a kid audience. NOT a real moderation
-// model -- replace before public launch (see SAFETY NOTE above).
+// MODERATION — two layers (see SAFETY NOTE above; tracked in GitHub for hardening).
+//
+// Layer 1: a cheap, zero-latency regex denylist (below). Catches blatant,
+//   plainly-spelled bad words and short-circuits before any API call.
+// Layer 2: an LLM classifier (Claude Haiku, `moderateLLM`) that understands
+//   intent/context and catches what the regex misses (plurals, phrasing).
+//
+// `isContentUnsafe()` runs Layer 1 then Layer 2 and is applied to BOTH the
+// child's input (before the answer call) and Webo's output (before display).
+// It is FAIL-CLOSED: any classifier error or unparseable response is treated
+// as unsafe, because this is a product for under-13s.
+//
+// NOTE: this is still not a substitute for a dedicated trust-and-safety service
+// (or an independent second provider) at public launch. See the project's
+// moderation tracking issue.
 const UNSAFE_PATTERNS = [
   /\b(sex|sexual|porn|nude|naked|nsfw|breast|penis|vagina)\b/,
   /\b(kill|murder|gun|shoot|stab|bomb|terror|gore|blood)\b/,
@@ -49,9 +63,60 @@ const UNSAFE_PATTERNS = [
   /\b(nigger|faggot|retard)\b/,
 ];
 
-function isUnsafe(text) {
+// Layer 1: regex denylist.
+function isUnsafeRegex(text) {
   const t = String(text).toLowerCase();
   return UNSAFE_PATTERNS.some((re) => re.test(t));
+}
+
+const MODERATION_SYSTEM =
+  'You are a strict content-safety classifier for a chat product used by children ages 6 to 10. ' +
+  'Decide whether the TEXT is appropriate for that audience. Off-topic but harmless text (for example ' +
+  'a question about animals or colors) is SAFE. Mark it UNSAFE only if it contains or requests: sexual or ' +
+  'adult content; violence, weapons, or gore; self-harm or suicide; drugs or alcohol; hate speech or slurs; ' +
+  'profanity; solicitation of a child\'s personal information (full name, home address, school, phone number); ' +
+  'or anything else not appropriate for young children. Respond with ONLY a JSON object: {"safe": true} or ' +
+  '{"safe": false}. No other text.';
+
+// Layer 2: LLM classifier (Claude Haiku). Returns true if SAFE. Fail-closed:
+// any network error, non-2xx, or unparseable response returns false (unsafe).
+async function moderateLLM(apiKey, text) {
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: MODERATION_MODEL,
+        max_tokens: 16,
+        system: MODERATION_SYSTEM,
+        messages: [{ role: 'user', content: String(text).slice(0, 2000) }],
+      }),
+    });
+    if (!r.ok) {
+      console.error('[webo] moderation call failed: http=' + r.status);
+      return false;
+    }
+    const data = await r.json();
+    const blocks = Array.isArray(data.content) ? data.content : [];
+    const out = blocks.filter((b) => b && b.type === 'text').map((b) => b.text || '').join('');
+    const match = out.match(/\{[^}]*\}/);
+    if (!match) return false;
+    return JSON.parse(match[0]).safe === true;
+  } catch (e) {
+    console.error('[webo] moderation call threw');
+    return false;
+  }
+}
+
+// Two-layer gate: Layer 1 (regex) first, then Layer 2 (Haiku). Fail-closed.
+async function isContentUnsafe(apiKey, text) {
+  if (isUnsafeRegex(text)) return true;
+  const safe = await moderateLLM(apiKey, text);
+  return !safe;
 }
 
 // Per-instance fallback bucket (best effort; not durable across cold starts/instances).
@@ -133,8 +198,8 @@ module.exports = async function handler(req, res) {
   const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown';
   if (!(await rateOk(ip))) return say(WEBO_BUSY, 429);
 
-  // Input moderation: do not call the model on unsafe input; gently redirect.
-  if (isUnsafe(lastUser)) return say(WEBO_REDIRECT);
+  // Input moderation (two-layer): do not call the answer model on unsafe input; redirect.
+  if (await isContentUnsafe(apiKey, lastUser)) return say(WEBO_REDIRECT);
 
   try {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
@@ -154,8 +219,8 @@ module.exports = async function handler(req, res) {
     const blocks = Array.isArray(data.content) ? data.content : [];
     const text = blocks.filter((b) => b && b.type === 'text').map((b) => b.text || '').join('').trim();
 
-    // Output moderation.
-    if (!text || isUnsafe(text)) return say(WEBO_FALLBACK);
+    // Output moderation (two-layer): screen Webo's reply before showing it.
+    if (!text || (await isContentUnsafe(apiKey, text))) return say(WEBO_FALLBACK);
     return say(text);
   } catch (e) {
     console.error('[webo] anthropic call threw');
