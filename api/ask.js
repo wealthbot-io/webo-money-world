@@ -20,14 +20,23 @@
 // under-13s. Confirm the COPPA / "collect nothing" posture with counsel and route
 // input + output through a dedicated moderation model before launch. See HANDOFF.md.
 
-const { limitOk, underGlobalCeiling } = require('../lib/kv');
+const { limitOk, chargeGlobalCeiling } = require('../lib/kv');
+const { clientIp } = require('../lib/util');
 
 const MODEL = process.env.WEBO_MODEL || 'claude-sonnet-4-5';
 const MODERATION_MODEL = process.env.WEBO_MODERATION_MODEL || 'claude-haiku-4-5';
 const RATE_MAX = parseInt(process.env.WEBO_RATE_MAX || '30', 10);            // per child/session per window
 const RATE_WINDOW = parseInt(process.env.WEBO_RATE_WINDOW || '600', 10);     // seconds
 const IP_RATE_MAX = parseInt(process.env.WEBO_IP_RATE_MAX || '150', 10);     // per-IP backstop (shared IPs: schools/homes) per window
-const GLOBAL_DAILY_MAX = parseInt(process.env.WEBO_GLOBAL_DAILY_MAX || '5000', 10); // global daily request ceiling (cost cap)
+// Global daily cost ceiling is measured in MODEL CALLS, not requests: a safe
+// request fans out to up to 3 Anthropic calls (input moderation + answer + output
+// moderation), so the ceiling is charged COST_UNITS_PER_REQUEST per request (#24 H1).
+// Default 15000 calls ~= 5000 full requests/day. On a KV outage the ceiling falls
+// to a LOW per-instance cap (#24 H2); the real backstop is a hard Anthropic billing cap.
+const COST_UNITS_PER_REQUEST = 3;
+const GLOBAL_DAILY_MAX = parseInt(process.env.WEBO_GLOBAL_DAILY_MAX || '15000', 10);      // model-call budget per day
+const GLOBAL_FALLBACK_MAX = parseInt(process.env.WEBO_GLOBAL_FALLBACK_MAX || '300', 10);  // per-instance cap during a KV outage
+const MAX_BODY_BYTES = parseInt(process.env.WEBO_MAX_BODY_BYTES || '16384', 10);          // reject oversized bodies before parse
 
 // Friendly, kid-safe canned lines. No em dashes in any user-facing copy.
 const WEBO_REDIRECT = 'Ooh, let us keep it about money and saving! \u{1F916} Try asking me how money grows, or what a piggy bank is for!';
@@ -158,6 +167,10 @@ module.exports = async function handler(req, res) {
     return say(WEBO_WARMING, 503);
   }
 
+  // Reject an oversized body before parsing it (cheap DoS guard, #24 L4).
+  const len = parseInt(req.headers['content-length'] || '0', 10);
+  if (len > MAX_BODY_BYTES) return say(WEBO_FALLBACK, 413);
+
   // Vercel parses application/json into req.body; tolerate a raw string too.
   let body = req.body;
   if (typeof body === 'string') {
@@ -181,7 +194,7 @@ module.exports = async function handler(req, res) {
   if (clean.length === 0 || clean[clean.length - 1].role !== 'user') return say(WEBO_FALLBACK, 400);
   const lastUser = clean[clean.length - 1].content;
 
-  const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown';
+  const ip = clientIp(req);
   const clientId = cleanClientId(body && body.clientId);
 
   // Layer 1: per-session (per browser). The primary budget so kids sharing one IP
@@ -196,7 +209,9 @@ module.exports = async function handler(req, res) {
     return say(WEBO_BUSY, 429);
   }
   // Layer 3: global daily cost ceiling (circuit breaker bounding total spend).
-  if (!(await underGlobalCeiling(GLOBAL_DAILY_MAX))) {
+  // Charged in model-call units (a safe request makes up to COST_UNITS_PER_REQUEST
+  // Anthropic calls); fails to a low per-instance cap on a KV outage.
+  if (!(await chargeGlobalCeiling(COST_UNITS_PER_REQUEST, GLOBAL_DAILY_MAX, GLOBAL_FALLBACK_MAX))) {
     console.warn('[webo] rate-limited: global-ceiling');
     return say(WEBO_RESTING, 429);
   }
@@ -230,3 +245,7 @@ module.exports = async function handler(req, res) {
     return say(WEBO_FALLBACK, 502);
   }
 };
+
+// Exposed for unit tests (do not call from the request path).
+module.exports.cleanClientId = cleanClientId;
+module.exports.isUnsafeRegex = isUnsafeRegex;

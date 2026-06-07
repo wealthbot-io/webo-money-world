@@ -60,6 +60,19 @@ The three lessons, world, and persistence all work with **no key**. Setting
 front-end-only), Ask Webo replies with a friendly "getting ready" message and the
 rest of the app stays fully usable.
 
+## Tests
+
+Pure-function unit tests (no dependencies, Node's built-in runner):
+
+```bash
+npm test          # node --test
+```
+
+They lock the highest-value invariants from the security audit (issue #24): the
+COPPA no-PII guarantee in `sanitizeProgress`, input normalization (`cleanCode`,
+`cleanClientId`), the moderation denylist, the spoof-resistant `clientIp`, and the
+KV layer (atomic incr-with-TTL, 3-state `kvSetNx`, fail-open / fail-to-low-cap).
+
 ## Deploying to Vercel
 
 The repo is Vercel-ready (`vercel.json`): the repo root is the static site, `api/ask.js`
