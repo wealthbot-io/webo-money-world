@@ -7,18 +7,18 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-<!-- App logic lives in an external file (not an inline <script>) so the CSP can drop
-     'unsafe-inline' from script-src (#24 M4). Both are `defer`, and app.js is listed
-     FIRST so weboWorld() is defined before Alpine initializes and evaluates x-data.
-     Alpine.js is self-hosted (vendored) so the app never depends on a third-party
-     CDN being reachable (a blocked/slow CDN previously made every Alpine-bound
-     element vanish on load). -->
-<script defer src="/app.js"></script>
+<!-- App logic is an ES module (lessons/ + lib/), not an inline <script>, so the CSP
+     keeps 'unsafe-inline' out of script-src (#24 M4). app.mjs registers the Alpine
+     component on `alpine:init`, so script order does not matter (both are deferred
+     and run before Alpine starts). Alpine.js is self-hosted (vendored) so the app
+     never depends on a third-party CDN being reachable (a blocked/slow CDN
+     previously made every Alpine-bound element vanish on load). -->
+<script type="module" src="/app.mjs"></script>
 <script defer src="/vendor/alpine-3.14.1.min.js"></script>
 <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-<div class="app" x-data="weboWorld()" x-init="init()">
+<div class="app" x-data="weboWorld" x-init="init()">
 
   <header>
     <div class="brand">
@@ -44,59 +44,11 @@
     <div class="world-stars" x-ref="worldStars"></div>
     <div class="world-title">Webo's World</div>
     <div class="world-stage">
-      <!-- props fill in, driven by state -->
-      <div class="prop prop-jars" :class="{ on: lessons[0].completed }">
-        <span class="jar spend"></span><span class="jar save"></span><span class="jar grow"></span>
-      </div>
-      <div class="prop prop-tree" :class="{ on: lessons[1].completed }">
-        <svg viewBox="0 0 78 110">
-          <rect x="34" y="60" width="10" height="48" rx="3" fill="#7a5230"/>
-          <circle cx="39" cy="40" r="26" fill="#3fae5c"/>
-          <circle cx="22" cy="50" r="17" fill="#5ed47a"/>
-          <circle cx="56" cy="50" r="17" fill="#5ed47a"/>
-          <circle cx="39" cy="30" r="18" fill="#6ee0a0"/>
-          <circle cx="28" cy="38" r="3" fill="#f5a623"/><circle cx="50" cy="35" r="3" fill="#f5a623"/><circle cx="40" cy="52" r="3" fill="#f5a623"/>
-        </svg>
-      </div>
-      <div class="prop prop-rocket" :class="{ on: lessons[2].completed }">
-        <svg viewBox="0 0 40 64">
-          <path d="M20 2 C30 12 30 30 28 44 L12 44 C10 30 10 12 20 2Z" fill="#f5e6c8"/>
-          <circle cx="20" cy="22" r="6" fill="#14263f" stroke="#4fd1c5" stroke-width="2"/>
-          <path d="M12 40 L4 52 L12 48Z" fill="#e08e0b"/>
-          <path d="M28 40 L36 52 L28 48Z" fill="#e08e0b"/>
-          <g class="flame"><path d="M14 46 L20 62 L26 46Z" fill="#ffb938"/><path d="M16 46 L20 56 L24 46Z" fill="#ff7b6b"/></g>
-        </svg>
-      </div>
-      <div class="prop prop-basket" :class="{ on: lessons[3].completed }">
-        <svg viewBox="0 0 70 60">
-          <circle cx="28" cy="22" r="8" fill="#ff7b6b"/>
-          <circle cx="44" cy="20" r="9" fill="#5ed47a"/>
-          <rect x="33" y="12" width="6" height="14" rx="3" fill="#f5a623"/>
-          <path d="M14 28 L56 28 L50 56 L20 56 Z" fill="#b9762e"/>
-          <path d="M13 28 L57 28 L55 34 L15 34 Z" fill="#e08e0b"/>
-          <path d="M22 38 L48 38 M21 46 L49 46" stroke="#8a5620" stroke-width="2" fill="none"/>
-          <path d="M22 28 Q35 8 48 28" stroke="#8a5620" stroke-width="3" fill="none"/>
-        </svg>
-      </div>
-      <div class="prop prop-kite" :class="{ on: lessons[4].completed }">
-        <svg viewBox="0 0 60 92">
-          <path d="M30 4 L52 34 L30 58 L8 34 Z" fill="#9d7bea"/>
-          <path d="M30 4 L40 34 L30 58 L20 34 Z" fill="#b79bf0"/>
-          <path d="M30 4 L30 58 M8 34 L52 34" stroke="#0a1628" stroke-width="2"/>
-          <path d="M30 58 Q35 70 27 78 Q21 86 30 92" stroke="#f5a623" stroke-width="2.5" fill="none"/>
-          <circle cx="30" cy="70" r="3" fill="#ff7b6b"/><circle cx="26" cy="81" r="3" fill="#5ed47a"/>
-        </svg>
-      </div>
-      <div class="prop prop-coins" :class="{ on: lessons[5].completed }">
-        <svg viewBox="0 0 60 50">
-          <ellipse cx="30" cy="44" rx="20" ry="6" fill="#e08e0b"/>
-          <ellipse cx="30" cy="40" rx="20" ry="6" fill="#f5a623"/>
-          <ellipse cx="30" cy="36" rx="20" ry="6" fill="#e08e0b"/>
-          <ellipse cx="30" cy="32" rx="20" ry="6" fill="#f5a623"/>
-          <circle cx="22" cy="20" r="10" fill="#ffb938" stroke="#e08e0b" stroke-width="1.5"/>
-          <path d="M22 15 v10 M19.5 17.5 h5 M19.5 22.5 h5" stroke="#e08e0b" stroke-width="1.6" fill="none" stroke-linecap="round"/>
-        </svg>
-      </div>
+      <!-- props are data-driven from the lesson registry (lessons/index.mjs):
+           each lesson carries its own prop SVG + position (prop.cls or prop.pos). -->
+      <template x-for="(l, i) in lessons" :key="l.id">
+        <div class="prop" :class="[propClass(i), { on: l.completed }]" :style="propStyle(i)" x-html="propHtml(i)"></div>
+      </template>
 
       <!-- WEBO -->
       <div class="webo" @click="tapWebo($el)" title="Tap me!">
