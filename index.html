@@ -949,7 +949,7 @@ function weboWorld() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           // send only the recent turns for context; the server holds the system prompt + key
-          body: JSON.stringify({ messages: this.chatHistory.slice(-12) }),
+          body: JSON.stringify({ messages: this.chatHistory.slice(-12), clientId: this.clientId() }),
         });
         const data = await res.json().catch(() => ({}));
         const reply = (data && typeof data.reply === 'string' && data.reply.trim())
@@ -962,6 +962,23 @@ function weboWorld() {
       }
       this.chatBusy = false;
       this.scrollChat();
+    },
+
+    // Anonymous per-browser id for per-session rate limiting. Random, no PII;
+    // persisted in localStorage. Lets kids sharing one IP each get their own budget.
+    clientId() {
+      const KEY = 'webo-money-world.cid';
+      try {
+        let id = localStorage.getItem(KEY);
+        if (!id) {
+          id = (crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now() + '-' + Math.random().toString(36).slice(2));
+          id = id.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40);
+          localStorage.setItem(KEY, id);
+        }
+        return id;
+      } catch (e) {
+        return ''; // private mode / no storage -> fall back to IP-only limiting
+      }
     },
 
     escapeHtml(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); },
