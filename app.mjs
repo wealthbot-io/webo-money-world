@@ -147,7 +147,12 @@ function weboWorld() {
     },
 
     // ---------- world props (data-driven from the registry) ----------
-    propClass(i) { return LESSONS[i].prop.cls || ''; },
+    // Return the full class STRING (tuned class + reactive `on`). Alpine's :class does
+    // NOT support a mixed ['str', {obj}] array - it stringifies the object to
+    // "[object Object]" and never applies the toggle - which silently hid every prop
+    // after the platform refactor. A method returning a plain string is reactive and
+    // correct (the completed flag is passed in, so the binding re-runs on change).
+    propClasses(i, done) { return (LESSONS[i].prop.cls || '') + (done ? ' on' : ''); },
     // A lesson may position its prop with a tuned CSS class (prop.cls) or, for a
     // zero-CSS drop-in, an inline position object (prop.pos: {left/right, bottom}).
     propStyle(i) {
