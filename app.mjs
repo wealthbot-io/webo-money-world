@@ -9,11 +9,11 @@
 // Registered as an Alpine component on `alpine:init` so the CSP can stay tight
 // (no inline script; script-src 'self' 'unsafe-eval').
 import { LESSONS } from './lessons/index.mjs';
-import { WEBO_SVG, speech, escapeHtml, mergeProgress, prefersReducedMotion } from './lib/lesson-kit.mjs';
+import { weboHtml, propArt, speech, escapeHtml, mergeProgress, prefersReducedMotion } from './lib/lesson-kit.mjs';
 
 function weboWorld() {
   return {
-    weboSvg: WEBO_SVG,
+    weboSvg: weboHtml(),
 
     // ---------- progress (persisted), derived from the lesson registry ----------
     lessons: LESSONS.map((l) => ({ id: l.id, no: l.no, name: l.name, sub: l.sub, icon: l.icon, completed: false })),
@@ -159,7 +159,7 @@ function weboWorld() {
       const p = LESSONS[i].prop.pos;
       return p ? Object.entries(p).map(([k, v]) => `${k}:${v}`).join(';') : '';
     },
-    propHtml(i) { return LESSONS[i].prop.html; },
+    propHtml(i) { return propArt(LESSONS[i].prop); },
 
     // ---------- lesson navigation ----------
     openLesson(i) {
