@@ -369,6 +369,33 @@
   .reward-stars { font-size: 30px; margin: 10px 0 18px; letter-spacing: 6px; }
   .confetti { position: fixed; top: -10px; width: 9px; height: 14px; z-index: 90; pointer-events: none; }
 
+  /* Save / move-to-another-device progress code (anonymous, no PII) */
+  .head-right { display: flex; align-items: center; gap: 10px; }
+  .device-btn {
+    background: var(--navy-card); border: 1px solid var(--navy-line); color: var(--text-dim);
+    border-radius: 10px; padding: 6px 10px; cursor: pointer; font-family: inherit; font-weight: 800;
+    font-size: 12px; display: inline-flex; align-items: center; gap: 5px;
+  }
+  .device-btn svg { width: 14px; height: 14px; }
+  .device-btn:active { transform: scale(.97); }
+  .code-block {
+    font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 30px; letter-spacing: 5px;
+    color: var(--orange-bright); background: var(--navy-deep); border: 1px dashed var(--orange);
+    border-radius: 14px; padding: 14px; margin: 10px 0; user-select: all;
+  }
+  .code-hint { font-size: 12.5px; color: var(--text-dim); font-weight: 600; line-height: 1.5; }
+  .code-divider { height: 1px; background: var(--navy-line); margin: 18px 0; }
+  .code-input {
+    width: 100%; background: var(--navy-card); border: 1px solid var(--navy-line); color: var(--text);
+    border-radius: 12px; padding: 12px; font-family: 'Baloo 2', sans-serif; font-weight: 800;
+    font-size: 20px; letter-spacing: 4px; text-align: center; text-transform: uppercase;
+  }
+  .code-input:focus { outline: none; border-color: var(--orange); }
+  .code-msg { font-size: 13px; font-weight: 700; margin-top: 10px; min-height: 18px; }
+  .code-msg.ok { color: var(--green); }
+  .code-msg.err { color: var(--red); }
+  .btn.small { font-size: 14px; padding: 11px; margin-top: 10px; }
+
   /* Ask Webo chat */
   .ask-fab {
     /* Sit in the right gutter BESIDE the 480px column on desktop (240px half-column
@@ -432,9 +459,15 @@
       </div>
       <div class="brand-name">webo's <span>money world</span></div>
     </div>
-    <div class="star-count">
-      <svg viewBox="0 0 24 24" fill="#f5a623"><path d="M12 2l2.9 6.1 6.6.9-4.8 4.6 1.2 6.6L12 18.6 6.1 20.2l1.2-6.6L2.5 9l6.6-.9z"/></svg>
-      <span x-text="stars">0</span>
+    <div class="head-right">
+      <div class="star-count">
+        <svg viewBox="0 0 24 24" fill="#f5a623"><path d="M12 2l2.9 6.1 6.6.9-4.8 4.6 1.2 6.6L12 18.6 6.1 20.2l1.2-6.6L2.5 9l6.6-.9z"/></svg>
+        <span x-text="stars">0</span>
+      </div>
+      <button class="device-btn" @click="openCodeModal()" title="Save or move your progress">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l3 3v15H5z"/><path d="M9 3v5h6"/><circle cx="12" cy="14" r="2.5"/></svg>
+        Save
+      </button>
     </div>
   </header>
 
@@ -532,6 +565,33 @@
       <p x-html="rewardText"></p>
       <div class="reward-stars">&#11088;&#11088;&#11088;</div>
       <button class="btn" @click="rewardOpen = false">Back to World</button>
+    </div>
+  </div>
+
+  <!-- SAVE / MOVE PROGRESS (anonymous code, no PII) -->
+  <div class="reward" :class="{ show: codeOpen }" x-cloak @click.self="codeOpen = false">
+    <div class="reward-card">
+      <h2>Save your stars</h2>
+      <p>Take your progress to another device with a secret code. No name, no email, nothing about you. Your stars are always saved on this device too.</p>
+
+      <button class="btn small" @click="saveToCloud()" :disabled="codeBusy">Get my code</button>
+      <template x-if="myCode">
+        <div>
+          <div class="code-block" x-text="myCode"></div>
+          <div class="code-hint">Write this code down. Type it on another device to bring your stars along. It works for about 90 days.</div>
+        </div>
+      </template>
+
+      <div class="code-divider"></div>
+
+      <p>Have a code? Type it here:</p>
+      <input class="code-input" x-model="codeInput" maxlength="9" placeholder="ABCD2345"
+             @keydown.enter="restoreFromCloud()" :disabled="codeBusy">
+      <button class="btn small" @click="restoreFromCloud()" :disabled="codeBusy">Bring my stars here</button>
+
+      <div class="code-msg" :class="codeMsgKind" x-text="codeMsg"></div>
+
+      <button class="btn ghost small" @click="codeOpen = false">Close</button>
     </div>
   </div>
 
@@ -646,6 +706,76 @@ function weboWorld() {
           lessons: this.lessons.map(l => ({ id: l.id, completed: l.completed })),
         }));
       } catch (e) { /* private mode / quota -> progress just will not persist */ }
+    },
+
+    // ---------- cross-device progress code (anonymous, no PII; see /api/progress) ----------
+    codeOpen: false, codeBusy: false, myCode: '', codeInput: '', codeMsg: '', codeMsgKind: '',
+
+    openCodeModal() {
+      this.myCode = ''; this.codeInput = ''; this.codeMsg = ''; this.codeMsgKind = '';
+      this.codeOpen = true;
+    },
+
+    // The blob sent to the cloud: lesson completion only, never anything identifying.
+    progressBlob() {
+      return { v: 1, stars: this.stars, lessons: this.lessons.map(l => ({ id: l.id, completed: l.completed })) };
+    },
+
+    async saveToCloud() {
+      this.codeBusy = true; this.codeMsg = ''; this.codeMsgKind = ''; this.myCode = '';
+      try {
+        const res = await fetch('/api/progress', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ progress: this.progressBlob() }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.code) {
+          this.myCode = data.code;
+        } else {
+          this.codeMsg = data.error || 'Could not get a code right now. Please try again later!';
+          this.codeMsgKind = 'err';
+        }
+      } catch (e) {
+        this.codeMsg = 'Could not get a code right now. Please try again later!';
+        this.codeMsgKind = 'err';
+      } finally {
+        this.codeBusy = false;
+      }
+    },
+
+    async restoreFromCloud() {
+      const code = (this.codeInput || '').trim();
+      if (!code) return;
+      this.codeBusy = true; this.codeMsg = ''; this.codeMsgKind = '';
+      try {
+        const res = await fetch('/api/progress?code=' + encodeURIComponent(code));
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.progress) {
+          this.applyProgress(data.progress);
+          this.codeMsg = 'Your stars are here! \u{2B50}';
+          this.codeMsgKind = 'ok';
+        } else {
+          this.codeMsg = data.error || 'That code did not work. Please check it and try again!';
+          this.codeMsgKind = 'err';
+        }
+      } catch (e) {
+        this.codeMsg = 'That code did not work. Please check it and try again!';
+        this.codeMsgKind = 'err';
+      } finally {
+        this.codeBusy = false;
+      }
+    },
+
+    // Merge restored progress into local state. Never DOWNGRADE: a star earned on
+    // this device is kept even if the restored code does not have it (OR the flags).
+    applyProgress(blob) {
+      if (!blob || !Array.isArray(blob.lessons)) return;
+      blob.lessons.forEach(sl => {
+        const l = this.lessons.find(x => x.id === sl.id);
+        if (l && sl.completed) l.completed = true;
+      });
+      this.save();
     },
 
     seedStars() {
