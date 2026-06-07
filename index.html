@@ -47,7 +47,7 @@
       <!-- props are data-driven from the lesson registry (lessons/index.mjs):
            each lesson carries its own prop SVG + position (prop.cls or prop.pos). -->
       <template x-for="(l, i) in lessons" :key="l.id">
-        <div class="prop" :class="[propClass(i), { on: l.completed }]" :style="propStyle(i)" x-html="propHtml(i)"></div>
+        <div class="prop" :class="propClasses(i, l.completed)" :style="propStyle(i)" x-html="propHtml(i)"></div>
       </template>
 
       <!-- WEBO -->
