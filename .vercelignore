@@ -9,3 +9,4 @@ HANDOFF.md
 *.log
 .env
 .vercel
+test/

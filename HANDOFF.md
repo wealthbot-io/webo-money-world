@@ -65,8 +65,10 @@ progress reward and must be driven by state, not one-off DOM toggles.
 - Progress dots and the star counter in the header bind to state.
 - Tapping Webo shows a random encouraging tip (cosmetic; already works, keep it).
 
-Designed to grow: a 4th lesson should mean adding one row to the lessons array,
-one flow function, and one prop. Keep that extensibility.
+Designed to grow: since the lesson-platform refactor (#29), a new lesson is a single
+file - `lessons/<id>.mjs` (metadata + world prop + `run(ctx)`), imported into the
+`lessons/index.mjs` registry. The core derives the lesson list, props, dots, and reward
+titles from the registry. See "Adding a lesson" in the README.
 
 ---
 
@@ -148,7 +150,7 @@ state, and make completion write to the state model.
 - [ ] Moderation on Ask Webo input and output; rate limiting on the endpoint.
 - [ ] No PII collected or logged; COPPA posture confirmed before public launch.
 - [ ] Mobile-first layout verified (primary audience is phone/tablet).
-- [ ] Adding a 4th lesson requires only: array entry + flow fn + prop. Confirm.
+- [x] Adding a lesson requires only a single `lessons/<id>.mjs` + one registry import (#29).
 - [ ] Copy contains no em dashes; nothing implies real money or advice.
 
 ## 7. Out of scope for this pass

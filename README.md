@@ -7,11 +7,16 @@ content. Strictly educational: no real money, no RIAs, no personalized advice.
 
 A working standalone micro-app:
 
-- **`index.html`** — the front-end. Refactored into an **Alpine.js** component.
-  Three playable lessons (Three Jars, Magic Penny, Planting Seeds), a state-driven
-  World hub (props pop in as lessons complete), progress dots, and a star counter.
-  Progress **persists in `localStorage`**; lessons **lock** until the previous one is
-  done; completion is **idempotent** (re-finishing never awards a second star).
+- **`index.html`** + **`app.mjs`** + **`styles.css`** — the front-end. `app.mjs` is an
+  **ES module** Alpine component (registered via `Alpine.data()` on `alpine:init`, so the
+  CSP needs no `unsafe-inline` for scripts). State-driven World hub (props pop in as
+  lessons complete), progress dots, star counter. Progress **persists in `localStorage`**;
+  lessons **lock** until the previous one is done; completion is **idempotent**.
+- **`lessons/`** — one self-contained ES module per lesson, plus `lessons/index.mjs` (the
+  ordered registry). The core derives the lesson list, world props, progress dots, and
+  reward titles from the registry. See **Adding a lesson** below.
+- **`lib/lesson-kit.mjs`** — shared client-side lesson primitives (`WEBO_SVG`, `speech`,
+  `escapeHtml`, `mergeProgress`, `prefersReducedMotion`) - pure + DOM-free so they unit-test.
 - **`api/ask.js`** — the **Ask Webo** proxy as a **Vercel Node serverless function**
   (`POST /api/ask`). Holds the Anthropic API key server-side (never shipped to the
   browser), applies starter safety guardrails (input + output moderation, per-IP rate
@@ -36,6 +41,30 @@ stars over. The code maps to a PII-free record in KV (TTL ~90 days) and **never*
 collects a name, email, or account. Account-based sync stays out of scope until the
 COPPA parental-consent flow lands (issue #1). Restoring **merges** (it never
 downgrades a star already earned on the current device).
+
+### Adding a lesson
+
+The lesson platform (#29) makes a new lesson a **single file**:
+
+1. Create `lessons/<id>.mjs` that default-exports a lesson object:
+   ```js
+   export default {
+     id: 'giving', no: 'LESSON 7', name: 'Giving and Sharing', sub: '...',
+     icon: '\u{1F381}', rewardTitle: 'You are a giver!',
+     prop: { cls: 'prop-gift', html: `<svg>...</svg>` }, // or pos: { left: '30%', bottom: '120px' }
+     run(ctx) {
+       // ctx: { renderStep, speech, shuffle, finish(text), reduceMotion, ovBody, ovActions }
+       ctx.renderStep(`<div class="lesson-intro">${ctx.speech('...')}</div> ...`, `<button class="btn" id="go">...</button>`);
+       // wire interactions on ctx.ovBody / ctx.ovActions; call ctx.finish('reward text') to complete.
+     },
+   };
+   ```
+2. Import it in `lessons/index.mjs` and add it to the `LESSONS` array.
+
+That is it - the lessons list, world prop, progress dot, and reward title all flow from
+the registry. A prop is placed by a tuned CSS class (`prop.cls` in `styles.css`) or, for a
+zero-CSS drop-in, an inline position (`prop.pos`). Add a test case to
+`test/registry.test.mjs` if the lesson introduces new invariants.
 
 See **HANDOFF.md** for the full build brief and the definition of done.
 
