@@ -12,5 +12,6 @@ import needs from './needs.mjs';
 import goal from './goal.mjs';
 import earn from './earn.mjs';
 import giving from './giving.mjs';
+import safe from './safe.mjs';
 
-export const LESSONS = [jars, penny, seeds, needs, goal, earn, giving];
+export const LESSONS = [jars, penny, seeds, needs, goal, earn, giving, safe];
