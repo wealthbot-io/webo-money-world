@@ -3,8 +3,8 @@ import assert from 'node:assert';
 import { LESSONS } from '../lessons/index.mjs';
 
 test('registry has the expected lessons in order', () => {
-  assert.strictEqual(LESSONS.length, 6);
-  assert.deepStrictEqual(LESSONS.map((l) => l.id), ['jars', 'penny', 'seeds', 'needs', 'goal', 'earn']);
+  assert.strictEqual(LESSONS.length, 7);
+  assert.deepStrictEqual(LESSONS.map((l) => l.id), ['jars', 'penny', 'seeds', 'needs', 'goal', 'earn', 'giving']);
 });
 
 test('every lesson has the required fields and a runnable flow', () => {
