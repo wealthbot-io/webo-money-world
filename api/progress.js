@@ -24,7 +24,8 @@ const CODE_LEN = 8;
 
 const TTL_DAYS = parseInt(process.env.WEBO_PROGRESS_TTL_DAYS || '90', 10);
 const TTL_SECONDS = TTL_DAYS * 86400;
-const RATE_MAX = parseInt(process.env.WEBO_PROGRESS_RATE_MAX || '30', 10); // per IP per window
+const RATE_MAX = parseInt(process.env.WEBO_PROGRESS_RATE_MAX || '30', 10);     // per-IP saves per window
+const GET_RATE_MAX = parseInt(process.env.WEBO_PROGRESS_GET_MAX || '15', 10);  // per-IP restores per window (tighter: GET is the guess/enumeration surface, #24 M2)
 const RATE_WINDOW = parseInt(process.env.WEBO_PROGRESS_WINDOW || '600', 10);
 const MAX_LESSONS = 50;       // cap the array length
 const MAX_ID_LEN = 24;        // cap each lesson id
@@ -85,9 +86,16 @@ module.exports = async function handler(req, res) {
   const len = parseInt(req.headers['content-length'] || '0', 10);
   if (len > MAX_BODY_BYTES) return send(413, { ok: false, error: MSG_OOPS });
 
+  // Separate, tighter limit for GET (the code-guess / enumeration surface) than for
+  // POST (save), and a distinct bucket so a restore burst cannot exhaust the save
+  // budget or vice versa (#24 M2). With the 32^8 CSPRNG keyspace this makes blind
+  // enumeration hopeless, and bounds use of the store as a free anonymous KV.
   const ip = clientIp(req);
-  if (!(await limitOk(`prog:${ip}`, RATE_MAX, RATE_WINDOW))) {
-    console.warn('[webo] progress rate-limited: ip');
+  const isGet = req.method === 'GET';
+  const bucket = isGet ? `prog-get:${ip}` : `prog:${ip}`;
+  const max = isGet ? GET_RATE_MAX : RATE_MAX;
+  if (!(await limitOk(bucket, max, RATE_WINDOW))) {
+    console.warn('[webo] progress rate-limited: ' + (isGet ? 'get' : 'save'));
     return send(429, { ok: false, error: MSG_BUSY });
   }
 
