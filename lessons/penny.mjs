@@ -1,4 +1,17 @@
 // LESSON 2: The Magic Penny - how money grows over time (compound growth).
+
+// Staged commentary keyed to the running value, so the journey is exciting the whole
+// way (not flat until day 30). Pure -> unit-tested. `good` picks the feedback color.
+export function stageMsg(d, v) {
+  if (d >= 30) return { good: true, html: '\u{1F92F} The penny becomes <b>over $5 MILLION</b>! That is the magic of money <b>doubling</b> again and again. Slow at first, then HUGE. That is why we start growing money early!' };
+  if (v >= 1000000) return { good: true, html: '\u{1F680} <b>Over a MILLION dollars</b> now, and still doubling! So close, slide to day 30!' };
+  if (v >= 1000) return { good: true, html: '\u{1F525} <b>Thousands of dollars</b> already! See how fast it climbs once it gets going?' };
+  if (v >= 10) return { good: false, html: '\u{1F4B0} Now we are counting <b>dollars</b>, and they stack up fast. Keep sliding!' };
+  if (v >= 0.10) return { good: false, html: 'A dime, then a <b>dollar or two</b>. The doubling is speeding up! \u{1F331}' };
+  if (d <= 1) return { good: false, html: 'Day 1: just <b>one penny</b>. \u{1FA99} Slide to watch it double every single day!' };
+  return { good: false, html: 'Still just a few <b>pennies</b>. Doubling feels slow at first, so keep going!' };
+}
+
 export default {
   id: 'penny',
   no: 'LESSON 2',
@@ -50,10 +63,13 @@ export default {
       barEls.forEach((b, i) => { b.style.height = (i < d ? Math.max((val(i + 1) / max) * 100, 1.5) : 0.5) + '%'; });
       if (v > 1000000) { pVs.textContent = '\u{1F389} BEATS $1,000,000!'; pVal.style.color = 'var(--green)'; }
       else { pVs.textContent = 'vs $1,000,000 today'; pVal.style.color = 'var(--orange)'; }
-      if (d === 30 && !reached30) {
+      // Staged commentary updates on EVERY move (so sliding back never leaves a stale
+      // day-30 message), while the Finish button still unlocks once day 30 is reached.
+      const st = stageMsg(d, v);
+      pFb.innerHTML = st.html;
+      pFb.className = 'feedback ' + (st.good ? 'good' : 'info') + ' show';
+      if (d >= 30 && !reached30) {
         reached30 = true; pDone.disabled = false; pDone.textContent = 'Whoa! Finish Lesson ⭐';
-        pFb.innerHTML = '\u{1F92F} The penny becomes <b>over $5 MILLION</b>! That is the magic of money <b>doubling</b> again and again. Slow at first, then HUGE. That is why we start growing money early!';
-        pFb.className = 'feedback good show';
       }
     }
     slider.oninput = update; update();
