@@ -15,8 +15,12 @@ A working standalone micro-app:
 - **`lessons/`** — one self-contained ES module per lesson, plus `lessons/index.mjs` (the
   ordered registry). The core derives the lesson list, world props, progress dots, and
   reward titles from the registry. See **Adding a lesson** below.
-- **`lib/lesson-kit.mjs`** — shared client-side lesson primitives (`WEBO_SVG`, `speech`,
-  `escapeHtml`, `mergeProgress`, `prefersReducedMotion`) - pure + DOM-free so they unit-test.
+- **`lib/lesson-kit.mjs`** — shared client-side lesson primitives (`WEBO_SVG`, `weboHtml`,
+  `propArt`, `speech`, `escapeHtml`, `mergeProgress`, `prefersReducedMotion`) - pure + DOM-free
+  so they unit-test.
+- **`assets/`** — drop-in art. The app ships placeholder SVG; setting `WEBO_ART` (character)
+  or a lesson's `prop.img` (world prop) swaps in real art with **no logic changes**. See
+  [`assets/README.md`](assets/README.md) for the asset contract.
 - **`api/ask.js`** — the **Ask Webo** proxy as a **Vercel Node serverless function**
   (`POST /api/ask`). Holds the Anthropic API key server-side (never shipped to the
   browser), applies starter safety guardrails (input + output moderation, per-IP rate

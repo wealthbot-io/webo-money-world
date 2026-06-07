@@ -107,6 +107,11 @@
   }
   .prop.on { opacity: 1; transform: translateY(0) scale(1); }
 
+  /* Swapped-in art (see lib/lesson-kit.mjs + assets/README.md). No effect until a
+     WEBO_ART path / prop.img is set - the placeholder SVG renders by default. */
+  .webo-art { width: 100%; height: auto; display: block; }
+  .prop-img { width: 56px; height: auto; display: block; }
+
   .prop-jars { left: 14px; }
   .jar { width: 22px; height: 30px; display: inline-block; margin: 0 1px; position: relative; vertical-align: bottom;
     border: 2px solid var(--cream); border-top: none; border-radius: 4px 4px 7px 7px; }
