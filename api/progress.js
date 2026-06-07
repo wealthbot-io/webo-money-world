@@ -15,7 +15,8 @@
 // This is the "anonymous resume code" tier of issue #19; localStorage remains the
 // default per-device store. No account-based sync until the COPPA flow lands (#1).
 
-const { kvGet, kvSet, kvConfigured, limitOk } = require('../lib/kv');
+const { kvGet, kvSetNx, kvConfigured, limitOk } = require('../lib/kv');
+const { clientIp } = require('../lib/util');
 
 // Unambiguous alphabet (no 0/O/1/I/L) so a child or parent can read/type a code.
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -28,6 +29,7 @@ const RATE_WINDOW = parseInt(process.env.WEBO_PROGRESS_WINDOW || '600', 10);
 const MAX_LESSONS = 50;       // cap the array length
 const MAX_ID_LEN = 24;        // cap each lesson id
 const MAX_RECORD_BYTES = 2048; // cap the stored blob
+const MAX_BODY_BYTES = parseInt(process.env.WEBO_MAX_BODY_BYTES || '8192', 10); // reject oversized bodies before parse (#24 L4)
 
 // Friendly, kid-safe copy (no em dashes).
 const MSG_BUSY = 'Lots of saving going on! \u{1F4A8} Give it a tiny moment and try again.';
@@ -80,7 +82,10 @@ module.exports = async function handler(req, res) {
     return send(503, { ok: false, error: MSG_OFF });
   }
 
-  const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown';
+  const len = parseInt(req.headers['content-length'] || '0', 10);
+  if (len > MAX_BODY_BYTES) return send(413, { ok: false, error: MSG_OOPS });
+
+  const ip = clientIp(req);
   if (!(await limitOk(`prog:${ip}`, RATE_MAX, RATE_WINDOW))) {
     console.warn('[webo] progress rate-limited: ip');
     return send(429, { ok: false, error: MSG_BUSY });
@@ -93,7 +98,10 @@ module.exports = async function handler(req, res) {
     try {
       const raw = await kvGet(`webo:progress:${code}`);
       if (!raw) return send(404, { ok: false, error: MSG_BAD });
-      const progress = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      // Re-sanitize on read too (#24 L2): defense-in-depth so a restore can only
+      // ever return the whitelisted, PII-free shape, even if a write path changed.
+      const progress = sanitizeProgress(typeof raw === 'string' ? JSON.parse(raw) : raw);
+      if (!progress) return send(404, { ok: false, error: MSG_BAD });
       return send(200, { ok: true, progress });
     } catch (e) {
       console.error('[webo] progress restore failed');
@@ -113,16 +121,28 @@ module.exports = async function handler(req, res) {
   if (payload.length > MAX_RECORD_BYTES) return send(413, { ok: false, error: MSG_OOPS });
 
   try {
-    // Generate a code that is not already taken (SET NX). Retry a few times.
+    // Generate a code that is not already taken (SET NX). Retry on a genuine
+    // collision; bail immediately (and log accurately) on a KV write error so the
+    // two failure modes are not conflated (#24 L1).
     for (let attempt = 0; attempt < 5; attempt++) {
       const code = randomCode();
-      const ok = await kvSet(`webo:progress:${code}`, payload, TTL_SECONDS, true);
-      if (ok) return send(200, { ok: true, code });
+      const result = await kvSetNx(`webo:progress:${code}`, payload, TTL_SECONDS);
+      if (result === 'ok') return send(200, { ok: true, code });
+      if (result === 'error') {
+        console.error('[webo] progress save: KV write failed');
+        return send(503, { ok: false, error: MSG_OOPS });
+      }
+      // result === 'exists' -> code collision, try another
     }
-    console.error('[webo] progress save: could not allocate a code');
+    console.error('[webo] progress save: code-space collision after retries');
     return send(503, { ok: false, error: MSG_OOPS });
   } catch (e) {
     console.error('[webo] progress save failed');
     return send(500, { ok: false, error: MSG_OOPS });
   }
 };
+
+// Exposed for unit tests (do not call from the request path).
+module.exports.sanitizeProgress = sanitizeProgress;
+module.exports.cleanCode = cleanCode;
+module.exports.randomCode = randomCode;
