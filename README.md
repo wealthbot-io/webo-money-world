@@ -17,8 +17,25 @@ A working standalone micro-app:
   browser), applies starter safety guardrails (input + output moderation, per-IP rate
   limiting), and returns short, kid-friendly replies. Rate limiting uses Upstash/Vercel
   KV when configured, else best-effort per-instance.
+- **`api/progress.js`** — anonymous **cross-device progress codes** (`POST` to save a
+  random code, `GET ?code=` to restore). COPPA-safe by design: the server rebuilds a
+  clean, PII-free record from a strict whitelist (lesson ids + completed flags only),
+  size-caps and TTLs it, and rate-limits per IP. No account, no login, no email.
+- **`lib/kv.js`** — shared Vercel KV / Upstash helpers + fail-open rate limiting, used
+  by both `api/ask.js` and `api/progress.js`.
 - **`prototype/webo-money-world.html`** — the original single-file visual prototype
   (kept for reference).
+
+### Saving progress (issue #19)
+
+Progress is **local-first**: it lives in `localStorage` per device and degrades
+gracefully (private mode / quota / corrupt data never crash the app — they just fall
+back to in-session progress). To move stars to another device, a child taps **Save**
+and gets a short **anonymous code**; typing that code on another device brings the
+stars over. The code maps to a PII-free record in KV (TTL ~90 days) and **never**
+collects a name, email, or account. Account-based sync stays out of scope until the
+COPPA parental-consent flow lands (issue #1). Restoring **merges** (it never
+downgrades a star already earned on the current device).
 
 See **HANDOFF.md** for the full build brief and the definition of done.
 

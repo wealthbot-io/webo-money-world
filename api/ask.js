@@ -20,6 +20,8 @@
 // under-13s. Confirm the COPPA / "collect nothing" posture with counsel and route
 // input + output through a dedicated moderation model before launch. See HANDOFF.md.
 
+const { limitOk, underGlobalCeiling } = require('../lib/kv');
+
 const MODEL = process.env.WEBO_MODEL || 'claude-sonnet-4-5';
 const MODERATION_MODEL = process.env.WEBO_MODERATION_MODEL || 'claude-haiku-4-5';
 const RATE_MAX = parseInt(process.env.WEBO_RATE_MAX || '30', 10);            // per child/session per window
@@ -127,71 +129,12 @@ async function isContentUnsafe(apiKey, text) {
 }
 
 // ---- Rate limiting ----------------------------------------------------------
-// Durable via Vercel KV / Upstash Redis when configured (KV_REST_API_URL/TOKEN or
-// UPSTASH_REDIS_REST_URL/TOKEN), else best-effort in-memory per instance. Three
-// layers, all FAIL-OPEN (never block a child over a transient KV error):
+// Three layers, all FAIL-OPEN (never block a child over a transient KV error),
+// durable via Vercel KV / Upstash when configured, else best-effort in-memory:
 //   1. per-session  (per browser, the primary budget so shared IPs are not over-blocked)
 //   2. per-IP       (a higher backstop against a single-IP flood)
 //   3. global daily (a cost ceiling / circuit breaker bounding total spend)
-// Resolve KV creds. Vercel's Marketplace KV/Upstash integration prefixes the env
-// vars with the store name (e.g. WEBO_MONEY_WORLD_KV_REST_API_URL), so match the
-// exact generic names first, then any var ENDING with the expected suffix. (We
-// want the read-WRITE token, so the read-only `..._READ_ONLY_TOKEN` is excluded
-// by suffix.)
-function resolveEnv(suffixes) {
-  for (const s of suffixes) if (process.env[s]) return process.env[s];
-  const keys = Object.keys(process.env);
-  for (const s of suffixes) {
-    const k = keys.find((name) => name.endsWith(s));
-    if (k && process.env[k]) return process.env[k];
-  }
-  return '';
-}
-const kvUrl = () => resolveEnv(['KV_REST_API_URL', 'UPSTASH_REDIS_REST_URL']);
-const kvToken = () => resolveEnv(['KV_REST_API_TOKEN', 'UPSTASH_REDIS_REST_TOKEN']);
-
-const memBuckets = new Map(); // key -> [timestamps] (in-memory fallback)
-let memDay = -1, memDayCount = 0;
-
-// INCR a KV key (set TTL on first hit). Returns the post-incr count, or null when
-// KV is not configured or errors (caller then uses the in-memory fallback / fails open).
-async function kvIncr(key, ttl) {
-  const url = kvUrl(), token = kvToken();
-  if (!url || !token) return null;
-  try {
-    const r = await fetch(`${url}/incr/${encodeURIComponent(key)}`, { headers: { Authorization: `Bearer ${token}` } });
-    if (!r.ok) return null;
-    const { result } = await r.json();
-    if (result === 1) {
-      await fetch(`${url}/expire/${encodeURIComponent(key)}/${ttl}`, { headers: { Authorization: `Bearer ${token}` } });
-    }
-    return typeof result === 'number' ? result : null;
-  } catch (e) {
-    return null;
-  }
-}
-
-// Windowed limit. true = allowed. KV-durable, else in-memory per instance.
-async function limitOk(bucket, max, window) {
-  const count = await kvIncr(`webo:rl:${bucket}`, window);
-  if (count !== null) return count <= max;
-  const now = Date.now() / 1000;
-  const arr = (memBuckets.get(bucket) || []).filter((t) => t > now - window);
-  if (arr.length >= max) { memBuckets.set(bucket, arr); return false; }
-  arr.push(now);
-  memBuckets.set(bucket, arr);
-  return true;
-}
-
-// Global daily request ceiling (cost cap / circuit breaker). true = under the ceiling.
-async function underGlobalCeiling() {
-  const day = Math.floor(Date.now() / 86400000);
-  const count = await kvIncr(`webo:cost:${day}`, 90000); // ~25h TTL
-  if (count !== null) return count <= GLOBAL_DAILY_MAX;
-  if (memDay !== day) { memDay = day; memDayCount = 0; }
-  memDayCount += 1;
-  return memDayCount <= GLOBAL_DAILY_MAX;
-}
+// The KV + rate-limit primitives live in ../lib/kv.js (shared with /api/progress).
 
 // Sanitize the client-supplied session id (untrusted): short, [A-Za-z0-9_-] only.
 function cleanClientId(v) {
@@ -253,7 +196,7 @@ module.exports = async function handler(req, res) {
     return say(WEBO_BUSY, 429);
   }
   // Layer 3: global daily cost ceiling (circuit breaker bounding total spend).
-  if (!(await underGlobalCeiling())) {
+  if (!(await underGlobalCeiling(GLOBAL_DAILY_MAX))) {
     console.warn('[webo] rate-limited: global-ceiling');
     return say(WEBO_RESTING, 429);
   }
