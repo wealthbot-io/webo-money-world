@@ -422,10 +422,10 @@
     /* Sit in the right gutter BESIDE the 480px column on desktop (240px half-column
        + 72px gap); clamp to 16px from the edge on narrow screens where there is no gutter. */
     position: fixed; bottom: 20px; right: max(16px, calc(50% - 312px)); z-index: 40;
-    background: linear-gradient(145deg, #4d8df5, #2f6fe0);
-    color: #fff; border: none; border-radius: 26px; padding: 13px 18px 13px 14px;
+    background: linear-gradient(145deg, #3a5f8a, #1f3a5c);
+    color: #eaf2ff; border: none; border-radius: 26px; padding: 13px 18px 13px 14px;
     font-family: 'Baloo 2'; font-weight: 700; font-size: 14px; cursor: pointer;
-    display: flex; align-items: center; gap: 8px; box-shadow: 0 8px 22px rgba(47,111,224,.45);
+    display: flex; align-items: center; gap: 8px; box-shadow: 0 8px 22px rgba(10,22,40,.5);
     animation: bob 3.4s ease-in-out infinite;
   }
   @media (max-width: 480px){ .ask-fab { right: 16px; } }
