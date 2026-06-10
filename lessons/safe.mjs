@@ -8,7 +8,9 @@ export default {
   icon: '\u{1F3E6}',
   rewardTitle: 'Safe and sound!',
   prop: {
-    pos: { left: '6%', bottom: '104px' },
+    pos: { left: '3%', bottom: '122px' },
+    img: '/assets/props/safe.png',
+    size: '62px',
     html: `<svg width="60" height="52" viewBox="0 0 60 52">
           <path d="M30 4 L54 18 L6 18 Z" fill="#f5e6c8"/>
           <rect x="8" y="18" width="44" height="4" fill="#e08e0b"/>

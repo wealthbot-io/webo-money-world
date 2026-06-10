@@ -23,8 +23,14 @@ test('propArt is null-safe', () => {
   assert.strictEqual(propArt(undefined), '');
 });
 
-test('weboHtml renders the inline SVG while WEBO_ART is unset (default)', () => {
-  assert.strictEqual(WEBO_ART, null);
-  assert.strictEqual(weboHtml(), WEBO_SVG);
-  assert.match(weboHtml(), /<svg/);
+test('weboHtml swaps in the character art when WEBO_ART is set, else the inline SVG', () => {
+  const out = weboHtml();
+  if (WEBO_ART) {
+    assert.match(out, new RegExp(`<img src="${WEBO_ART}"`));
+    assert.match(out, /class="webo-art"/);
+    assert.doesNotMatch(out, /<svg/);
+  } else {
+    assert.strictEqual(out, WEBO_SVG);
+    assert.match(out, /<svg/);
+  }
 });

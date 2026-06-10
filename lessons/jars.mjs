@@ -8,6 +8,8 @@ export default {
   rewardTitle: 'Three Jars done!',
   prop: {
     cls: 'prop-jars',
+    img: '/assets/props/jars.png',
+    size: '78px',
     html: '<span class="jar spend"></span><span class="jar save"></span><span class="jar grow"></span>',
   },
   run(ctx) {

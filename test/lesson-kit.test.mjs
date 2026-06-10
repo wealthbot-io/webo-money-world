@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { WEBO_SVG, speech, escapeHtml, mergeProgress, prefersReducedMotion } from '../lib/lesson-kit.mjs';
+import { weboHtml, speech, escapeHtml, mergeProgress, prefersReducedMotion } from '../lib/lesson-kit.mjs';
 
 test('escapeHtml encodes the dangerous HTML characters', () => {
   assert.strictEqual(escapeHtml('<b>"x"</b> & y'), '&lt;b&gt;&quot;x&quot;&lt;/b&gt; &amp; y');
@@ -8,12 +8,12 @@ test('escapeHtml encodes the dangerous HTML characters', () => {
   assert.strictEqual(escapeHtml(42), '42');
 });
 
-test('speech wraps text in a bubble with the Webo SVG', () => {
+test('speech wraps text in a bubble with the Webo avatar', () => {
   const html = speech('hello money');
   assert.ok(html.includes('hello money'));
   assert.ok(html.includes('class="speech"'));
   assert.ok(html.includes('class="bubble"'));
-  assert.ok(html.includes(WEBO_SVG));
+  assert.ok(html.includes(weboHtml()));
 });
 
 test('mergeProgress ORs completed flags and never downgrades a local star', () => {

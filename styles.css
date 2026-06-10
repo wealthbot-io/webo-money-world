@@ -88,15 +88,7 @@
     margin-bottom: 4px;
   }
   .world-stage {
-    height: 220px; position: relative; display: grid; place-items: end center;
-  }
-
-  /* ground */
-  .ground {
-    position: absolute; bottom: 0; left: -10px; right: -10px; height: 60px;
-    background: linear-gradient(180deg, #163152, #0e2138);
-    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
-    border-top: 2px solid var(--navy-line);
+    height: 250px; position: relative; display: grid; place-items: center;
   }
 
   /* world props that fill in */
@@ -110,9 +102,9 @@
   /* Swapped-in art (see lib/lesson-kit.mjs + assets/README.md). No effect until a
      WEBO_ART path / prop.img is set - the placeholder SVG renders by default. */
   .webo-art { width: 100%; height: auto; display: block; }
-  .prop-img { width: 56px; height: auto; display: block; }
+  .prop-img { width: 56px; height: auto; display: block; filter: drop-shadow(0 6px 10px rgba(0,0,0,.4)); }
 
-  .prop-jars { left: 14px; }
+  .prop-jars { left: 4%; bottom: 6px; }
   .jar { width: 22px; height: 30px; display: inline-block; margin: 0 1px; position: relative; vertical-align: bottom;
     border: 2px solid var(--cream); border-top: none; border-radius: 4px 4px 7px 7px; }
   .jar::after { content:""; position:absolute; left:1px; right:1px; bottom:1px; height: 55%;
@@ -123,26 +115,25 @@
   .jar::before { content:""; position:absolute; top:-5px; left:-3px; right:-3px; height:5px;
     background: var(--cream); border-radius: 3px; }
 
-  .prop-tree { right: 22px; bottom: 36px; }
+  .prop-tree { left: 77%; bottom: 86px; }
   .prop-tree svg { width: 78px; height: 110px; display: block; }
 
-  .prop-rocket { left: 50%; transform: translateX(-50%) translateY(14px) scale(.6); bottom: 150px; }
-  .prop-rocket.on { transform: translateX(-50%) translateY(0) scale(1); }
+  .prop-rocket { left: 44%; bottom: 192px; }
   .prop-rocket svg { width: 40px; height: 64px; filter: drop-shadow(0 0 12px rgba(245,166,35,.5)); }
   .prop-rocket .flame { transform-origin: 50% 0; animation: flicker .35s infinite alternate; }
   @keyframes flicker { from{transform:scaleY(.8)} to{transform:scaleY(1.15)} }
 
-  .prop-basket { right: 24%; bottom: 40px; }
+  .prop-basket { left: 74%; bottom: 6px; }
   .prop-basket svg { width: 64px; height: 56px; filter: drop-shadow(0 6px 10px rgba(0,0,0,.4)); }
 
-  .prop-kite { left: 20%; bottom: 166px; }
+  .prop-kite { left: 11%; bottom: 182px; }
   .prop-kite svg { width: 50px; height: 76px; filter: drop-shadow(0 6px 10px rgba(0,0,0,.4)); animation: bob 3.4s ease-in-out infinite; }
 
-  .prop-coins { right: 38px; bottom: 96px; }
+  .prop-coins { left: 76%; bottom: 178px; }
   .prop-coins svg { width: 56px; height: 46px; filter: drop-shadow(0 6px 10px rgba(0,0,0,.4)); }
 
   /* ---------- Webo character (pure CSS/SVG) ---------- */
-  .webo { width: 120px; position: relative; z-index: 3; margin-bottom: 30px;
+  .webo { width: 120px; position: relative; z-index: 3; margin-bottom: 0;
     animation: bob 3.4s ease-in-out infinite; cursor: pointer; }
   @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
   .webo svg { width: 100%; display: block; filter: drop-shadow(0 10px 18px rgba(0,0,0,.45)); }
@@ -153,13 +144,13 @@
     filter: blur(6px); }
 
   .webo-hint {
-    text-align: center; font-size: 12px; color: var(--text-dim); margin-top: 18px;
+    text-align: center; font-size: 12px; color: var(--text-dim); margin-top: 8px;
     font-weight: 700; position: relative; z-index: 4;
   }
 
   /* ---------- Progress dots ---------- */
   .progress {
-    display: flex; justify-content: center; gap: 8px; margin: 18px 0 6px;
+    display: flex; justify-content: center; gap: 8px; margin: 8px 0 4px;
   }
   .progress .dot {
     width: 9px; height: 9px; border-radius: 50%; background: var(--navy-line);

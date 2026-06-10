@@ -9,7 +9,9 @@ export default {
   icon: '\u{1F3D8}\u{FE0F}',
   rewardTitle: 'A town that shares!',
   prop: {
-    pos: { left: '40%', bottom: '38px' },
+    pos: { left: '40%', bottom: '4px' },
+    img: '/assets/props/taxes.png',
+    size: '84px',
     html: `<svg width="64" height="46" viewBox="0 0 64 46">
           <rect x="4" y="24" width="16" height="18" fill="#ff7b6b"/>
           <path d="M2 24 L12 14 L22 24 Z" fill="#e08e0b"/>
