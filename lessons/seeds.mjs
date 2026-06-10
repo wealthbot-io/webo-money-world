@@ -8,6 +8,8 @@ export default {
   rewardTitle: 'You did it!',
   prop: {
     cls: 'prop-rocket',
+    img: '/assets/props/seeds.png',
+    size: '46px',
     html: `<svg viewBox="0 0 40 64">
           <path d="M20 2 C30 12 30 30 28 44 L12 44 C10 30 10 12 20 2Z" fill="#f5e6c8"/>
           <circle cx="20" cy="22" r="6" fill="#14263f" stroke="#4fd1c5" stroke-width="2"/>

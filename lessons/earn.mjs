@@ -8,6 +8,8 @@ export default {
   rewardTitle: 'You are an earner!',
   prop: {
     cls: 'prop-coins',
+    img: '/assets/props/earn.png',
+    size: '54px',
     html: `<svg viewBox="0 0 60 50">
           <ellipse cx="30" cy="44" rx="20" ry="6" fill="#e08e0b"/>
           <ellipse cx="30" cy="40" rx="20" ry="6" fill="#f5a623"/>

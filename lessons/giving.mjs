@@ -9,7 +9,9 @@ export default {
   icon: '\u{1F49B}',
   rewardTitle: 'You are a giver!',
   prop: {
-    pos: { left: '32%', bottom: '40px' },
+    pos: { left: '3%', bottom: '50px' },
+    img: '/assets/props/giving.png',
+    size: '60px',
     html: `<svg width="58" height="58" viewBox="0 0 58 58">
           <path d="M15 56 V32 M29 56 V26 M43 56 V34" stroke="#3fae5c" stroke-width="3" stroke-linecap="round" fill="none"/>
           <ellipse cx="15" cy="28" rx="7" ry="9" fill="#ff7b6b"/>

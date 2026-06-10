@@ -21,6 +21,8 @@ export default {
   rewardTitle: 'Magic unlocked!',
   prop: {
     cls: 'prop-tree',
+    img: '/assets/props/penny.png',
+    size: '72px',
     html: `<svg viewBox="0 0 78 110">
           <rect x="34" y="60" width="10" height="48" rx="3" fill="#7a5230"/>
           <circle cx="39" cy="40" r="26" fill="#3fae5c"/>

@@ -8,6 +8,8 @@ export default {
   rewardTitle: 'Needs vs Wants done!',
   prop: {
     cls: 'prop-basket',
+    img: '/assets/props/needs.png',
+    size: '60px',
     html: `<svg viewBox="0 0 70 60">
           <circle cx="28" cy="22" r="8" fill="#ff7b6b"/>
           <circle cx="44" cy="20" r="9" fill="#5ed47a"/>

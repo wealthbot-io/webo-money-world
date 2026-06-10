@@ -8,6 +8,8 @@ export default {
   rewardTitle: 'Patience pays off!',
   prop: {
     cls: 'prop-kite',
+    img: '/assets/props/goal.png',
+    size: '56px',
     html: `<svg viewBox="0 0 60 92">
           <path d="M30 4 L52 34 L30 58 L8 34 Z" fill="#9d7bea"/>
           <path d="M30 4 L40 34 L30 58 L20 34 Z" fill="#b79bf0"/>
