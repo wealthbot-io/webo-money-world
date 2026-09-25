@@ -246,7 +246,6 @@ function weboWorld() {
       if (!text || this.chatBusy) return;
       this.chatInput = '';
       this.messages.push({ who: 'me', html: escapeHtml(text) });
-      this.chatHistory.push({ role: 'user', content: text });
       this.chatBusy = true;
       this.scrollChat();
       try {
@@ -254,14 +253,19 @@ function weboWorld() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           // send only the recent turns for context; the server holds the system prompt + key
-          body: JSON.stringify({ messages: this.chatHistory.slice(-12), clientId: this.clientId() }),
+          body: JSON.stringify({ messages: this.chatHistory.concat({ role: 'user', content: text }).slice(-12), clientId: this.clientId() }),
         });
         const data = await res.json().catch(() => ({}));
         const reply = (data && typeof data.reply === 'string' && data.reply.trim())
           ? data.reply.trim()
           : "Hmm, my circuits got a little fuzzy! \u{1F916} Try asking me again!";
         this.messages.push({ who: 'bot', html: escapeHtml(reply).replace(/\n/g, '<br>') });
-        this.chatHistory.push({ role: 'assistant', content: reply });
+        // Only real answers become context. A blocked, busy, or failed turn is shown
+        // but never replayed to the server, so one redirected question cannot keep
+        // riding along in later requests.
+        if (data && data.answered) {
+          this.chatHistory.push({ role: 'user', content: text }, { role: 'assistant', content: reply });
+        }
       } catch (e) {
         this.messages.push({ who: 'bot', html: "Oops, my antenna lost signal! \u{1F4E1} Ask me again in a moment!" });
       }
