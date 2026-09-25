@@ -15,5 +15,6 @@ import giving from './giving.mjs';
 import safe from './safe.mjs';
 import taxes from './taxes.mjs';
 import debt from './debt.mjs';
+import credit from './credit.mjs';
 
-export const LESSONS = [jars, penny, seeds, needs, goal, earn, giving, safe, taxes, debt];
+export const LESSONS = [jars, penny, seeds, needs, goal, earn, giving, safe, taxes, debt, credit];
