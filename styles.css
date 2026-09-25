@@ -373,6 +373,11 @@
   .goal-fill { height: 100%; width: 0; background: linear-gradient(90deg, var(--teal), var(--green)); border-radius: 10px; transition: width .5s cubic-bezier(.34,1.56,.64,1); }
   .goal-week { text-align: center; font-family: 'Baloo 2', sans-serif; font-weight: 700; font-size: 14px; color: var(--text-dim); margin-bottom: 12px; }
   .goal-choices { display: flex; flex-direction: column; gap: 10px; margin-bottom: 4px; }
+  .debt-stage { height: 128px; display: grid; place-items: center; }
+  .debt-ball { border-radius: 50%; display: grid; place-items: center;
+    background: radial-gradient(circle at 35% 30%, #fff, #cfe0f5); box-shadow: 0 6px 18px rgba(0,0,0,.35);
+    color: #0a1628; font-family: 'Baloo 2'; font-weight: 800; font-size: 20px;
+    transition: width .45s cubic-bezier(.34,1.56,.64,1), height .45s cubic-bezier(.34,1.56,.64,1); }
   .goal-choices .choice { text-align: center; font-family: 'Baloo 2', sans-serif; font-weight: 700; }
 
   /* Reward modal */
