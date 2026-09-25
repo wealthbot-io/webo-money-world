@@ -162,8 +162,23 @@ function weboWorld() {
     propHtml(i) { return propArt(LESSONS[i].prop); },
 
     // ---------- lesson navigation ----------
+    // A tap on a locked card used to do nothing at all; now the card wiggles and
+    // says which lesson unlocks it, so a child is never left guessing.
+    nudgeIndex: -1, _nudgeTimer: null,
+    lockedHint(i) { return `Finish "${this.lessons[i - 1].name}" first to unlock this one! \u{1F512}`; },
+    lessonLabel(i) {
+      const l = this.lessons[i];
+      const state = l.completed ? 'done' : this.isLocked(i) ? 'locked' : 'ready to play';
+      return `${l.no}: ${l.name}. ${l.sub}. ${state}`;
+    },
     openLesson(i) {
-      if (this.isLocked(i)) return;
+      if (this.isLocked(i)) {
+        this.nudgeIndex = i;
+        clearTimeout(this._nudgeTimer);
+        this._nudgeTimer = setTimeout(() => { this.nudgeIndex = -1; }, 2600);
+        return;
+      }
+      this.nudgeIndex = -1;
       this.currentLesson = i;
       this.overlayTitle = this.lessons[i].name;
       this.overlayOpen = true;
@@ -217,6 +232,7 @@ function weboWorld() {
     },
 
     fireConfetti() {
+      if (prefersReducedMotion()) return; // the reward card + stars still celebrate
       const colors = ['#f5a623', '#4fd1c5', '#5ed47a', '#ff7b6b', '#9d7bea', '#ffb938'];
       for (let i = 0; i < 40; i++) {
         const c = document.createElement('div'); c.className = 'confetti';
@@ -246,7 +262,6 @@ function weboWorld() {
       if (!text || this.chatBusy) return;
       this.chatInput = '';
       this.messages.push({ who: 'me', html: escapeHtml(text) });
-      this.chatHistory.push({ role: 'user', content: text });
       this.chatBusy = true;
       this.scrollChat();
       try {
@@ -254,14 +269,19 @@ function weboWorld() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           // send only the recent turns for context; the server holds the system prompt + key
-          body: JSON.stringify({ messages: this.chatHistory.slice(-12), clientId: this.clientId() }),
+          body: JSON.stringify({ messages: this.chatHistory.concat({ role: 'user', content: text }).slice(-12), clientId: this.clientId() }),
         });
         const data = await res.json().catch(() => ({}));
         const reply = (data && typeof data.reply === 'string' && data.reply.trim())
           ? data.reply.trim()
           : "Hmm, my circuits got a little fuzzy! \u{1F916} Try asking me again!";
         this.messages.push({ who: 'bot', html: escapeHtml(reply).replace(/\n/g, '<br>') });
-        this.chatHistory.push({ role: 'assistant', content: reply });
+        // Only real answers become context. A blocked, busy, or failed turn is shown
+        // but never replayed to the server, so one redirected question cannot keep
+        // riding along in later requests.
+        if (data && data.answered) {
+          this.chatHistory.push({ role: 'user', content: text }, { role: 'assistant', content: reply });
+        }
       } catch (e) {
         this.messages.push({ who: 'bot', html: "Oops, my antenna lost signal! \u{1F4E1} Ask me again in a moment!" });
       }

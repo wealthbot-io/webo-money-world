@@ -1,6 +1,9 @@
 // Webo's Money World — "Ask Webo" serverless proxy (Vercel Node function).
 //
-// POST /api/ask  { messages: [{role, content}, ...] }  ->  { reply: "..." }
+// POST /api/ask  { messages: [{role, content}, ...] }  ->  { reply: "...", answered? }
+//
+// `answered: true` marks a real model answer. Canned replies (redirect, busy,
+// fallback) omit it, and the client leaves those turns out of the chat history.
 //
 // Holds the Anthropic API key server-side (never shipped to the browser), applies
 // kid-facing safety guardrails (input + output moderation, per-IP rate limiting),
@@ -152,6 +155,40 @@ function cleanClientId(v) {
   return s;
 }
 
+// Keep only well-formed {role, content} turns; cap length and count. Earlier user
+// turns that trip the Layer 1 denylist are dropped together with the reply that
+// followed them, so a message that was blocked once is never replayed to the
+// answer model as context on later turns (only the latest turn goes through the
+// full two-layer gate). Returns null if there is no final user turn to answer.
+const MAX_TURNS = 12;
+const MAX_CHARS = 500;
+function sanitizeTurns(messages) {
+  if (!Array.isArray(messages)) return null;
+  const clean = [];
+  for (const m of messages.slice(-MAX_TURNS)) {
+    if (!m || typeof m !== 'object') continue;
+    const role = m.role === 'assistant' ? 'assistant' : 'user';
+    let content = typeof m.content === 'string' ? m.content.trim() : '';
+    if (!content) continue;
+    if (content.length > MAX_CHARS) content = content.slice(0, MAX_CHARS);
+    clean.push({ role, content });
+  }
+  if (clean.length === 0 || clean[clean.length - 1].role !== 'user') return null;
+  const out = [];
+  for (let i = 0; i < clean.length - 1; i++) {
+    const t = clean[i];
+    if (t.role === 'user' && isUnsafeRegex(t.content)) {
+      if (clean[i + 1] && clean[i + 1].role === 'assistant') i++;
+      continue;
+    }
+    out.push(t);
+  }
+  out.push(clean[clean.length - 1]);
+  // The answer API needs the conversation to open with a user turn.
+  while (out.length && out[0].role !== 'user') out.shift();
+  return out;
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store');
@@ -179,19 +216,8 @@ module.exports = async function handler(req, res) {
   const messages = body && Array.isArray(body.messages) ? body.messages : null;
   if (!messages || messages.length === 0) return say(WEBO_FALLBACK, 400);
 
-  // Keep only well-formed {role, content} turns; cap length and count.
-  const MAX_TURNS = 12;
-  const MAX_CHARS = 500;
-  const clean = [];
-  for (const m of messages.slice(-MAX_TURNS)) {
-    if (!m || typeof m !== 'object') continue;
-    const role = m.role === 'assistant' ? 'assistant' : 'user';
-    let content = typeof m.content === 'string' ? m.content.trim() : '';
-    if (!content) continue;
-    if (content.length > MAX_CHARS) content = content.slice(0, MAX_CHARS);
-    clean.push({ role, content });
-  }
-  if (clean.length === 0 || clean[clean.length - 1].role !== 'user') return say(WEBO_FALLBACK, 400);
+  const clean = sanitizeTurns(messages);
+  if (!clean) return say(WEBO_FALLBACK, 400);
   const lastUser = clean[clean.length - 1].content;
 
   const ip = clientIp(req);
@@ -239,7 +265,7 @@ module.exports = async function handler(req, res) {
 
     // Output moderation (two-layer): screen Webo's reply before showing it.
     if (!text || (await isContentUnsafe(apiKey, text))) return say(WEBO_FALLBACK);
-    return say(text);
+    return res.status(200).json({ reply: text, answered: true });
   } catch (e) {
     console.error('[webo] anthropic call threw');
     return say(WEBO_FALLBACK, 502);
@@ -249,3 +275,4 @@ module.exports = async function handler(req, res) {
 // Exposed for unit tests (do not call from the request path).
 module.exports.cleanClientId = cleanClientId;
 module.exports.isUnsafeRegex = isUnsafeRegex;
+module.exports.sanitizeTurns = sanitizeTurns;
