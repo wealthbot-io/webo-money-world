@@ -68,15 +68,20 @@
   <div class="lessons" x-cloak>
     <template x-for="(l, i) in lessons" :key="l.id">
       <div class="lesson-card"
-           :class="{ locked: isLocked(i), complete: l.completed }"
-           @click="openLesson(i)">
-        <div class="lesson-ico" x-text="l.icon"></div>
+           role="button" tabindex="0"
+           :aria-disabled="isLocked(i) ? 'true' : 'false'"
+           :aria-label="lessonLabel(i)"
+           :class="{ locked: isLocked(i), complete: l.completed, nudge: nudgeIndex === i }"
+           @click="openLesson(i)"
+           @keydown.enter.prevent="openLesson(i)"
+           @keydown.space.prevent="openLesson(i)">
+        <div class="lesson-ico" x-text="l.icon" aria-hidden="true"></div>
         <div class="lesson-body">
           <div class="lesson-no" x-text="l.no"></div>
           <div class="lesson-name" x-text="l.name"></div>
-          <div class="lesson-sub" x-text="l.sub"></div>
+          <div class="lesson-sub" x-text="nudgeIndex === i ? lockedHint(i) : l.sub" aria-live="polite"></div>
         </div>
-        <div class="lesson-status" x-html="statusIcon(i)"></div>
+        <div class="lesson-status" x-html="statusIcon(i)" aria-hidden="true"></div>
       </div>
     </template>
   </div>

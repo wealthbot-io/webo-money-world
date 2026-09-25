@@ -175,6 +175,11 @@
   .lesson-card:hover { border-color: var(--orange); box-shadow: 0 6px 24px rgba(0,0,0,.3); }
   .lesson-card.locked { opacity: .5; cursor: not-allowed; }
   .lesson-card.locked:hover { border-color: var(--navy-line); box-shadow: none; }
+  .lesson-card:focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; }
+  .lesson-card.nudge { opacity: .85; animation: nudge .45s ease; }
+  .lesson-card.nudge .lesson-sub { color: var(--orange); font-weight: 700; }
+  @keyframes nudge { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
+  @media (prefers-reduced-motion: reduce) { .lesson-card.nudge { animation: none; } }
   .lesson-card.complete::before {
     content:""; position:absolute; inset:0; border-radius:18px;
     background: linear-gradient(90deg, rgba(94,212,122,.10), transparent 60%);

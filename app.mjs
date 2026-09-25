@@ -162,8 +162,23 @@ function weboWorld() {
     propHtml(i) { return propArt(LESSONS[i].prop); },
 
     // ---------- lesson navigation ----------
+    // A tap on a locked card used to do nothing at all; now the card wiggles and
+    // says which lesson unlocks it, so a child is never left guessing.
+    nudgeIndex: -1, _nudgeTimer: null,
+    lockedHint(i) { return `Finish "${this.lessons[i - 1].name}" first to unlock this one! \u{1F512}`; },
+    lessonLabel(i) {
+      const l = this.lessons[i];
+      const state = l.completed ? 'done' : this.isLocked(i) ? 'locked' : 'ready to play';
+      return `${l.no}: ${l.name}. ${l.sub}. ${state}`;
+    },
     openLesson(i) {
-      if (this.isLocked(i)) return;
+      if (this.isLocked(i)) {
+        this.nudgeIndex = i;
+        clearTimeout(this._nudgeTimer);
+        this._nudgeTimer = setTimeout(() => { this.nudgeIndex = -1; }, 2600);
+        return;
+      }
+      this.nudgeIndex = -1;
       this.currentLesson = i;
       this.overlayTitle = this.lessons[i].name;
       this.overlayOpen = true;
@@ -217,6 +232,7 @@ function weboWorld() {
     },
 
     fireConfetti() {
+      if (prefersReducedMotion()) return; // the reward card + stars still celebrate
       const colors = ['#f5a623', '#4fd1c5', '#5ed47a', '#ff7b6b', '#9d7bea', '#ffb938'];
       for (let i = 0; i < 40; i++) {
         const c = document.createElement('div'); c.className = 'confetti';
