@@ -373,6 +373,18 @@
   .goal-fill { height: 100%; width: 0; background: linear-gradient(90deg, var(--teal), var(--green)); border-radius: 10px; transition: width .5s cubic-bezier(.34,1.56,.64,1); }
   .goal-week { text-align: center; font-family: 'Baloo 2', sans-serif; font-weight: 700; font-size: 14px; color: var(--text-dim); margin-bottom: 12px; }
   .goal-choices { display: flex; flex-direction: column; gap: 10px; margin-bottom: 4px; }
+  .paycard { width: 220px; height: 136px; margin: 8px auto 16px; border-radius: 16px; position: relative;
+    background: linear-gradient(135deg, #4fd1c5, #2fb3a8 55%, #1f8f86); color: #0a1628;
+    box-shadow: 0 10px 26px rgba(0,0,0,.4); transition: transform .25s ease; }
+  .paycard.tapped { transform: scale(.96) rotate(-3deg); }
+  .paycard-chip { position: absolute; left: 18px; top: 44px; width: 36px; height: 27px; border-radius: 6px;
+    background: linear-gradient(135deg, #ffd27a, #e0a02b); }
+  .paycard-name { position: absolute; left: 18px; top: 14px; font-family: 'Baloo 2'; font-weight: 800;
+    font-size: 13px; letter-spacing: 1.2px; }
+  .paycard-label { position: absolute; left: 18px; bottom: 14px; font-family: 'Baloo 2'; font-weight: 700; font-size: 15px; }
+  .cc-bill { text-align: center; font-family: 'Baloo 2'; font-weight: 700; font-size: 22px; margin: 6px 0 4px; }
+  .cc-bill b { color: var(--orange); }
+  @media (prefers-reduced-motion: reduce) { .paycard { transition: none; } }
   .debt-stage { height: 128px; display: grid; place-items: center; }
   .debt-ball { border-radius: 50%; display: grid; place-items: center;
     background: radial-gradient(circle at 35% 30%, #fff, #cfe0f5); box-shadow: 0 6px 18px rgba(0,0,0,.35);
