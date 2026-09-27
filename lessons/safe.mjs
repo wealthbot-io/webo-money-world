@@ -8,6 +8,10 @@ export default {
   icon: '\u{1F3E6}',
   rewardTitle: 'Safe and sound!',
   tip: 'A bank keeps coins super safe! \u{1F3E6}',
+  grownups: {
+    teaches: 'Where money is kept matters: a pocket loses it, a piggy bank keeps it, a bank keeps it safe and adds a little.',
+    tryAtHome: 'If they have a savings account, show them the balance and any interest line together.',
+  },
   prop: {
     pos: { left: '3%', bottom: '122px' },
     img: '/assets/props/safe.png',

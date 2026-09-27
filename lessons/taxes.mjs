@@ -9,6 +9,10 @@ export default {
   icon: '\u{1F3D8}\u{FE0F}',
   rewardTitle: 'A town that shares!',
   tip: 'We each give a little so everyone gets a lot! \u{1F3D8}\u{FE0F}',
+  grownups: {
+    teaches: 'Taxes are the town\'s shared jar: everyone gives a little so everyone gets parks, schools, and fire trucks.',
+    tryAtHome: 'On a walk, point out things the shared jar paid for: the library, the playground, the road.',
+  },
   prop: {
     pos: { left: '40%', bottom: '4px' },
     img: '/assets/props/taxes.png',
