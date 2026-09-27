@@ -64,6 +64,8 @@ The lesson platform (#29) makes a new lesson a **single file**:
    };
    ```
 2. Import it in `lessons/index.mjs` and add it to the `LESSONS` array.
+3. Add a play-through driver in `test/lessons-play.test.mjs` (a few `click()` calls
+   along the happy path). `npm test` fails until one exists.
 
 That is it - the lessons list, world prop, progress dot, and reward title all flow from
 the registry. A prop is placed by a tuned CSS class (`prop.cls` in `styles.css`) or, for a
@@ -95,11 +97,19 @@ rest of the app stays fully usable.
 
 ## Tests
 
-Pure-function unit tests (no dependencies, Node's built-in runner):
+Node's built-in runner; the only dependency is `linkedom` (a small DOM for the
+lesson play-throughs):
 
 ```bash
+npm install       # once (dev only)
 npm test          # node --test
 ```
+
+`test/lessons-play.test.mjs` **plays every lesson to its star** in that DOM, tapping
+through the happy path the way a child would, plus a wrong quiz answer where a lesson
+has one. It fails if a button is wired wrong, a step dead-ends, `finish()` never fires,
+Finish is tappable before the lesson is played, or any step copy contains an em dash.
+Every lesson in the registry must have a driver there (the test says which file to edit).
 
 They lock the highest-value invariants from the security audit (issue #24): the
 COPPA no-PII guarantee in `sanitizeProgress`, input normalization (`cleanCode`,
