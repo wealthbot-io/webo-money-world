@@ -3,8 +3,9 @@
 //
 // TO ADD A LESSON: create lessons/<id>.mjs (default-export an object with
 //   { id, no, name, sub, icon, rewardTitle, prop:{cls|pos, html}, run(ctx) })
-// then import it and add it to the array below. Nothing else changes - the core
-// derives the lesson list, world props, progress dots, and reward titles from here.
+// then import it and add it to the array below, and add a play-through driver in
+// test/lessons-play.test.mjs. Nothing else changes - the core derives the lesson
+// list, world props, progress dots, and reward titles from here.
 import jars from './jars.mjs';
 import penny from './penny.mjs';
 import seeds from './seeds.mjs';
