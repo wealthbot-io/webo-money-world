@@ -1,15 +1,14 @@
 // The full moderation gate, with fetch stubbed per provider (no network, no keys).
 const { test } = require('node:test');
 const assert = require('node:assert');
-const { moderate, moderateLLM, moderateSecondProvider } = require('../api/ask');
+const { moderate, moderateLLM } = require('../api/ask');
 
 const realFetch = global.fetch;
-// Route by URL: anthropic -> `haiku`, openai -> `openai`. Each is a JSON payload,
-// the string 'throw' (network failure), or { status } for a non-2xx.
-function stub({ haiku, openai }) {
+// `haiku` is a JSON payload, the string 'throw' (network failure), or { status } for a non-2xx.
+function stub({ haiku }) {
   const calls = [];
   global.fetch = async (url, opts) => {
-    const which = url.includes('anthropic') ? haiku : openai;
+    const which = haiku;
     calls.push({ url, body: JSON.parse(opts.body) });
     if (which === 'throw') throw new Error('down');
     if (which && which.status) return { ok: false, status: which.status, json: async () => ({}) };
@@ -18,8 +17,7 @@ function stub({ haiku, openai }) {
   return calls;
 }
 const haikuSays = (safe) => ({ content: [{ type: 'text', text: JSON.stringify({ safe }) }] });
-const openaiSays = (flagged) => ({ results: [{ flagged }] });
-function restore() { global.fetch = realFetch; delete process.env.OPENAI_API_KEY; }
+function restore() { global.fetch = realFetch; }
 
 test('moderateLLM maps the classifier output to safe / unsafe / error', async () => {
   try {
@@ -32,7 +30,7 @@ test('moderateLLM maps the classifier output to safe / unsafe / error', async ()
   } finally { restore(); }
 });
 
-test('safe input passes the gate without touching the second provider when it is off', async () => {
+test('safe input passes the gate with one classifier call', async () => {
   const calls = stub({ haiku: haikuSays(true) });
   try {
     const v = await moderate('k', 'why does money grow?', 'input');
@@ -60,28 +58,6 @@ test('fail-closed: a classifier outage blocks, and is reported as an error (not 
     assert.deepStrictEqual(await moderate('k', 'what is a piggy bank?', 'input'), { unsafe: true, layer: 'llm', error: true });
     stub({ haiku: { status: 500 } });
     assert.strictEqual((await moderate('k', 'what is a piggy bank?', 'output')).unsafe, true);
-  } finally { restore(); }
-});
-
-test('second provider: runs alongside Haiku when configured; either vendor can block; its outage fails closed', async () => {
-  process.env.OPENAI_API_KEY = 'test';
-  try {
-    let calls = stub({ haiku: haikuSays(true), openai: openaiSays(false) });
-    assert.deepStrictEqual(await moderate('k', 'hi', 'input'), { unsafe: false });
-    assert.strictEqual(calls.length, 2, 'both providers consulted');
-    assert.ok(calls.some((c) => c.url.includes('openai')));
-
-    stub({ haiku: haikuSays(true), openai: openaiSays(true) });
-    assert.deepStrictEqual(await moderate('k', 'hi', 'input'), { unsafe: true, layer: 'second', error: false });
-
-    stub({ haiku: haikuSays(false), openai: openaiSays(false) });
-    assert.strictEqual((await moderate('k', 'hi', 'input')).layer, 'llm');
-
-    stub({ haiku: haikuSays(true), openai: 'throw' });
-    assert.deepStrictEqual(await moderate('k', 'hi', 'input'), { unsafe: true, layer: 'second', error: true });
-
-    stub({ haiku: haikuSays(true), openai: { results: [] } });
-    assert.strictEqual(await moderateSecondProvider('hi'), 'error', 'malformed response is an error, never safe');
   } finally { restore(); }
 });
 

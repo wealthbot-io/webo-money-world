@@ -12,7 +12,6 @@
 // Environment variables (set in the Vercel dashboard):
 //   ANTHROPIC_API_KEY            (required)  server-side key
 //   WEBO_MODEL                   (optional)  defaults to a current Sonnet
-//   OPENAI_API_KEY               (optional)  turns on the independent second moderation provider
 //   WEBO_RATE_MAX                (optional)  max requests per window per IP (default 30)
 //   WEBO_RATE_WINDOW             (optional)  window in seconds (default 600)
 //   UPSTASH_REDIS_REST_URL/TOKEN (optional)  durable rate limit across instances;
@@ -67,9 +66,6 @@ const SYSTEM_PROMPT =
 //   plainly-spelled bad words and short-circuits before any API call.
 // Layer 2: an LLM classifier (Claude Haiku, `moderateLLM`) that understands
 //   intent/context and catches what the regex misses (plurals, phrasing).
-// Layer 3 (optional): an independent second provider (`moderateSecondProvider`,
-//   OpenAI Moderation), on when OPENAI_API_KEY is set, run alongside Layer 2 so
-//   the verdict never rests on a single vendor.
 //
 // `moderate()` runs the layers and is applied to BOTH the child's input (before
 // the answer call) and Webo's output (before display). It is FAIL-CLOSED: any
@@ -140,33 +136,6 @@ async function moderateLLM(apiKey, text) {
   }
 }
 
-// Layer 3 (optional): an INDEPENDENT second provider, so moderation does not
-// rest on a single vendor. Runs alongside Haiku when OPENAI_API_KEY is set
-// (OpenAI's moderation endpoint is free and has a dedicated minors category).
-// Same contract as Layer 2: 'safe' | 'unsafe' | 'error', fail-closed.
-const OPENAI_MODERATION_MODEL = process.env.WEBO_OPENAI_MODERATION_MODEL || 'omni-moderation-latest';
-function secondProviderConfigured() { return !!process.env.OPENAI_API_KEY; }
-async function moderateSecondProvider(text) {
-  try {
-    const r = await fetch('https://api.openai.com/v1/moderations', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
-      body: JSON.stringify({ model: OPENAI_MODERATION_MODEL, input: String(text).slice(0, 2000) }),
-    });
-    if (!r.ok) {
-      console.error('[webo] second-provider moderation failed: http=' + r.status);
-      return 'error';
-    }
-    const data = await r.json();
-    const res = Array.isArray(data.results) ? data.results[0] : null;
-    if (!res || typeof res.flagged !== 'boolean') return 'error';
-    return res.flagged ? 'unsafe' : 'safe';
-  } catch (e) {
-    console.error('[webo] second-provider moderation threw');
-    return 'error';
-  }
-}
-
 // Observability without content: count blocks by stage (input/output) and by
 // the layer that fired. Never logs the child's message or any PII. The KV
 // counter is best-effort (a KV outage must never affect the verdict).
@@ -176,22 +145,17 @@ function recordBlock(stage, layer) {
   kvIncrBy(`webo:mod:${day}:${stage}:${layer}`, 8 * 86400).catch(() => {});
 }
 
-// The gate. Layer 1 (regex) first; then Layer 2 (Haiku) and, when configured,
-// Layer 3 (second provider) in parallel. Returns a verdict:
+// The gate. Layer 1 (regex) first, then Layer 2 (Haiku). Returns a verdict:
 //   { unsafe: false }                          text is fine
 //   { unsafe: true, layer, error: false }      a layer flagged it
-//   { unsafe: true, layer, error: true }       a layer errored (fail-closed)
+//   { unsafe: true, layer, error: true }       the classifier errored (fail-closed)
 // so the handler can block in both cases yet tell the child the truth: a
 // redirect for real hits, a "try again" for a transient classifier error.
 async function moderate(apiKey, text, stage) {
   if (isUnsafeRegex(text)) { recordBlock(stage, 'regex'); return { unsafe: true, layer: 'regex', error: false }; }
-  const checks = [moderateLLM(apiKey, text).then((v) => ['llm', v])];
-  if (secondProviderConfigured()) checks.push(moderateSecondProvider(text).then((v) => ['second', v]));
-  const results = await Promise.all(checks);
-  const hit = results.find(([, v]) => v === 'unsafe');
-  if (hit) { recordBlock(stage, hit[0]); return { unsafe: true, layer: hit[0], error: false }; }
-  const err = results.find(([, v]) => v !== 'safe');
-  if (err) { recordBlock(stage, err[0] + '-error'); return { unsafe: true, layer: err[0], error: true }; }
+  const v = await moderateLLM(apiKey, text);
+  if (v === 'unsafe') { recordBlock(stage, 'llm'); return { unsafe: true, layer: 'llm', error: false }; }
+  if (v !== 'safe') { recordBlock(stage, 'llm-error'); return { unsafe: true, layer: 'llm', error: true }; }
   return { unsafe: false };
 }
 
@@ -335,5 +299,4 @@ module.exports.cleanClientId = cleanClientId;
 module.exports.isUnsafeRegex = isUnsafeRegex;
 module.exports.sanitizeTurns = sanitizeTurns;
 module.exports.moderateLLM = moderateLLM;
-module.exports.moderateSecondProvider = moderateSecondProvider;
 module.exports.moderate = moderate;
