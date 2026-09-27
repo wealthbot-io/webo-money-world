@@ -32,9 +32,9 @@
         <svg viewBox="0 0 24 24" fill="#f5a623"><path d="M12 2l2.9 6.1 6.6.9-4.8 4.6 1.2 6.6L12 18.6 6.1 20.2l1.2-6.6L2.5 9l6.6-.9z"/></svg>
         <span x-text="stars">0</span>
       </div>
-      <button class="device-btn" @click="openCodeModal()" title="Save or move your progress">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l3 3v15H5z"/><path d="M9 3v5h6"/><circle cx="12" cy="14" r="2.5"/></svg>
-        Save
+      <button class="device-btn" @click="openCodeModal()" title="Save or move your progress" aria-label="Save or move your progress">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h11l3 3v15H5z"/><path d="M9 3v5h6"/><circle cx="12" cy="14" r="2.5"/></svg>
+        <span class="device-label">Save</span>
       </button>
     </div>
   </header>
@@ -81,8 +81,10 @@
           <div class="lesson-name" x-text="l.name"></div>
           <div class="lesson-sub" x-text="nudgeIndex === i ? lockedHint(i) : l.sub" aria-live="polite"></div>
         </div>
-        <div class="lesson-status" x-html="statusIcon(i)" aria-hidden="true"></div>
-        <div class="lesson-replay" x-show="l.completed" aria-hidden="true">Play again</div>
+        <div class="lesson-status" aria-hidden="true">
+          <span x-html="statusIcon(i)"></span>
+          <span class="lesson-replay" x-show="l.completed">Play again</span>
+        </div>
       </div>
     </template>
   </div>
@@ -192,7 +194,7 @@
     </div>
     <div class="chat-input">
       <input x-model="chatInput" @keydown.enter="sendChat()" aria-label="Ask Webo anything about money"
-             placeholder="Ask Webo anything about money..." autocomplete="off" :disabled="chatBusy">
+             placeholder="Ask me about money..." autocomplete="off" :disabled="chatBusy">
       <button @click="sendChat()" :disabled="chatBusy" aria-label="Send">&#10148;</button>
     </div>
   </div>
