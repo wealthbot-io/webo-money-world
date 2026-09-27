@@ -180,6 +180,8 @@
   .lesson-card.nudge .lesson-sub { color: var(--orange); font-weight: 700; }
   @keyframes nudge { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
   @media (prefers-reduced-motion: reduce) { .lesson-card.nudge { animation: none; } }
+  .lesson-replay { position: absolute; right: 12px; bottom: 6px; font-family: 'Baloo 2'; font-weight: 700;
+    font-size: 10px; letter-spacing: .5px; text-transform: uppercase; color: var(--green); opacity: .85; }
   .lesson-card.complete::before {
     content:""; position:absolute; inset:0; border-radius:18px;
     background: linear-gradient(90deg, rgba(94,212,122,.10), transparent 60%);

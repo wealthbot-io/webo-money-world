@@ -9,7 +9,7 @@
 // Registered as an Alpine component on `alpine:init` so the CSP can stay tight
 // (no inline script; script-src 'self' 'unsafe-eval').
 import { LESSONS } from './lessons/index.mjs';
-import { weboHtml, propArt, speech, escapeHtml, mergeProgress, prefersReducedMotion } from './lib/lesson-kit.mjs';
+import { weboHtml, propArt, speech, escapeHtml, mergeProgress, prefersReducedMotion, pickHint } from './lib/lesson-kit.mjs';
 
 function weboWorld() {
   return {
@@ -23,6 +23,7 @@ function weboWorld() {
     hint: 'Tap Webo to say hi!',
     overlayOpen: false, overlayTitle: '', currentLesson: 0,
     rewardOpen: false, rewardTitle: '', rewardText: '',
+    finaleOpen: false, finaleShown: false, // the one-time "you finished the world" moment
     chatOpen: false, chatBusy: false, chatInput: '',
     chatHistory: [],   // [{role, content}] sent to the backend for context
     messages: [],      // [{who:'bot'|'me', html}] rendered in the log
@@ -30,6 +31,7 @@ function weboWorld() {
 
     // ---------- derived ----------
     get stars() { return this.lessons.filter((l) => l.completed).length; },
+    get allDone() { return this.lessons.every((l) => l.completed); },
     isLocked(i) { return i > 0 && !this.lessons[i - 1].completed; },
     hasAsked() { return this.messages.some((m) => m.who === 'me'); },
 
@@ -50,6 +52,7 @@ function weboWorld() {
             if (l) l.completed = !!sl.completed;
           });
         }
+        if (saved && saved.finaleShown) this.finaleShown = true;
       } catch (e) { /* corrupt storage -> start fresh, never throw at a child */ }
     },
 
@@ -58,6 +61,7 @@ function weboWorld() {
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify({
           stars: this.stars,
           lessons: this.lessons.map((l) => ({ id: l.id, completed: l.completed })),
+          finaleShown: this.finaleShown,
         }));
       } catch (e) { /* private mode / quota -> progress just will not persist */ }
     },
@@ -168,7 +172,7 @@ function weboWorld() {
     lockedHint(i) { return `Finish "${this.lessons[i - 1].name}" first to unlock this one! \u{1F512}`; },
     lessonLabel(i) {
       const l = this.lessons[i];
-      const state = l.completed ? 'done' : this.isLocked(i) ? 'locked' : 'ready to play';
+      const state = l.completed ? 'done, play again' : this.isLocked(i) ? 'locked' : 'ready to play';
       return `${l.no}: ${l.name}. ${l.sub}. ${state}`;
     },
     openLesson(i) {
@@ -184,7 +188,15 @@ function weboWorld() {
       this.overlayOpen = true;
       this.$nextTick(() => LESSONS[i].run(this._lessonCtx()));
     },
-    closeOverlay() { this.overlayOpen = false; },
+    closeOverlay() { this.overlayOpen = false; this.returnFocus(); },
+    // Put keyboard focus back on the card that opened the lesson, so a keyboard
+    // or screen-reader user lands where they left off instead of at the top.
+    returnFocus() {
+      this.$nextTick(() => {
+        const card = this.$root.querySelectorAll('.lesson-card')[this.currentLesson];
+        if (card) card.focus();
+      });
+    },
 
     // The context handed to each lesson's run(): the scaffold render + the helpers a
     // lesson needs, without exposing the whole component.
@@ -222,12 +234,29 @@ function weboWorld() {
       this.rewardOpen = true;
     },
 
+    // Closing the reward card: normally back to the world; the first time the
+    // last star lands, roll straight into the finale instead.
+    closeReward() {
+      this.rewardOpen = false;
+      if (this.allDone && !this.finaleShown) {
+        this.finaleShown = true;
+        this.save();
+        this.finaleOpen = true;
+        this.fireConfetti();
+        return;
+      }
+      this.returnFocus();
+    },
+    closeFinale() { this.finaleOpen = false; this.returnFocus(); },
+
     shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; },
 
-    // ---------- hero Webo tap (cosmetic) ----------
+    // ---------- hero Webo tap ----------
+    // Webo's hint comes from the lessons themselves: half the time a nudge toward
+    // the next unlocked lesson, otherwise a tip from a lesson already earned (so
+    // the hints grow with the child's progress). See pickHint() in lesson-kit.
     tapWebo(el) {
-      const hints = ["Money grows when you are patient! \u{1F331}", "Three jars: Spend, Save, Grow! \u{1FAD9}", "Tiny coins become BIG over time! ✨", "Spread your seeds around! \u{1F333}", "You are doing great, buddy! \u{1F49B}"];
-      this.hint = hints[Math.floor(Math.random() * hints.length)];
+      this.hint = pickHint(LESSONS, this.lessons);
       el.animate([{ transform: 'translateY(0) scale(1)' }, { transform: 'translateY(-12px) scale(1.06)' }, { transform: 'translateY(0) scale(1)' }], { duration: 500, easing: 'ease-out' });
     },
 

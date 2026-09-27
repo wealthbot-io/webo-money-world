@@ -29,6 +29,7 @@ export default {
   sub: 'Credit cards are a promise',
   icon: '\u{1F4B3}',
   rewardTitle: 'Card smart!',
+  tip: 'A pay-later card is a promise, not free money! \u{1F4B3}',
   prop: {
     pos: { left: '23%', bottom: '96px' },
     html: `<svg width="46" height="32" viewBox="0 0 46 32">

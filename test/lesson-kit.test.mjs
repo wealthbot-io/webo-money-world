@@ -44,3 +44,22 @@ test('mergeProgress tolerates a missing/garbage blob', () => {
 test('prefersReducedMotion is safe to call without a window (returns false)', () => {
   assert.strictEqual(prefersReducedMotion(), false);
 });
+
+import { pickHint } from '../lib/lesson-kit.mjs';
+
+const reg = [{ id: 'a', tip: 'tip A' }, { id: 'b', tip: 'tip B' }, { id: 'c', tip: 'tip C' }];
+const prog = (...done) => reg.map((l, i) => ({ id: l.id, name: 'Lesson ' + l.id.toUpperCase(), completed: done.includes(i) }));
+
+test('pickHint nudges toward the first lesson when nothing is earned yet', () => {
+  assert.match(pickHint(reg, prog(), 0.9), /Ready for "Lesson A"/);
+});
+
+test('pickHint splits between the next-lesson nudge and an earned tip', () => {
+  assert.match(pickHint(reg, prog(0), 0.2), /Ready for "Lesson B"/);
+  assert.strictEqual(pickHint(reg, prog(0), 0.7), 'tip A');
+  assert.strictEqual(pickHint(reg, prog(0, 1), 0.99), 'tip B'); // never past the last earned tip
+});
+
+test('pickHint celebrates when every lesson is done', () => {
+  assert.match(pickHint(reg, prog(0, 1, 2), 0.1), /finished every lesson/);
+});

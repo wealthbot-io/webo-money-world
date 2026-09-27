@@ -19,6 +19,7 @@ export default {
   sub: 'How money grows over time',
   icon: '\u{1FA99}',
   rewardTitle: 'Magic unlocked!',
+  tip: 'Tiny coins become BIG over time! \u{2728}',
   prop: {
     cls: 'prop-tree',
     img: '/assets/props/penny.png',

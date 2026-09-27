@@ -6,6 +6,7 @@ export default {
   sub: 'Work turns into coins',
   icon: '\u{1F4AA}',
   rewardTitle: 'You are an earner!',
+  tip: 'Work turns into coins! \u{1F4AA}',
   prop: {
     cls: 'prop-coins',
     img: '/assets/props/earn.png',
