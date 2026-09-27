@@ -7,6 +7,7 @@ export default {
   sub: 'Piggy bank to a bank',
   icon: '\u{1F3E6}',
   rewardTitle: 'Safe and sound!',
+  tip: 'A bank keeps coins super safe! \u{1F3E6}',
   prop: {
     pos: { left: '3%', bottom: '122px' },
     img: '/assets/props/safe.png',

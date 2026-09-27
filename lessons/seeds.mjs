@@ -6,6 +6,7 @@ export default {
   sub: 'Why we spread money around',
   icon: '\u{1F331}',
   rewardTitle: 'You did it!',
+  tip: 'Spread your seeds around! \u{1F333}',
   prop: {
     cls: 'prop-rocket',
     img: '/assets/props/seeds.png',

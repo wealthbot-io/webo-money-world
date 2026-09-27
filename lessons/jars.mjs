@@ -6,6 +6,7 @@ export default {
   sub: 'Earning, spending & saving',
   icon: '\u{1FAD9}',
   rewardTitle: 'Three Jars done!',
+  tip: 'Three jars: Spend, Save, Grow! \u{1FAD9}',
   prop: {
     cls: 'prop-jars',
     img: '/assets/props/jars.png',

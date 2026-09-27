@@ -6,6 +6,7 @@ export default {
   sub: 'Patience pays off',
   icon: '\u{1FA81}',
   rewardTitle: 'Patience pays off!',
+  tip: 'Saving a little each week gets the BIG thing! \u{1FA81}',
   prop: {
     cls: 'prop-kite',
     img: '/assets/props/goal.png',

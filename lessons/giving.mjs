@@ -8,6 +8,7 @@ export default {
   sub: 'A little from many adds up',
   icon: '\u{1F49B}',
   rewardTitle: 'You are a giver!',
+  tip: 'A little from many adds up to a lot! \u{1F49B}',
   prop: {
     pos: { left: '3%', bottom: '50px' },
     img: '/assets/props/giving.png',

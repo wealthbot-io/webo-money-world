@@ -42,7 +42,7 @@
   <!-- WORLD HUB -->
   <div class="world">
     <div class="world-stars" x-ref="worldStars"></div>
-    <div class="world-title">Webo's World</div>
+    <div class="world-title" x-text="allDone ? 'Webo\'s World: complete!' : 'Webo\'s World'">Webo's World</div>
     <div class="world-stage">
       <!-- props are data-driven from the lesson registry (lessons/index.mjs):
            each lesson carries its own prop SVG + position (prop.cls or prop.pos). -->
@@ -82,6 +82,7 @@
           <div class="lesson-sub" x-text="nudgeIndex === i ? lockedHint(i) : l.sub" aria-live="polite"></div>
         </div>
         <div class="lesson-status" x-html="statusIcon(i)" aria-hidden="true"></div>
+        <div class="lesson-replay" x-show="l.completed" aria-hidden="true">Play again</div>
       </div>
     </template>
   </div>
@@ -112,7 +113,22 @@
       <h2 x-text="rewardTitle">Awesome!</h2>
       <p x-html="rewardText"></p>
       <div class="reward-stars" aria-hidden="true">&#11088;&#11088;&#11088;</div>
-      <button class="btn" @click="rewardOpen = false" x-ref="rewardBtn">Back to World</button>
+      <button class="btn" @click="closeReward()" x-ref="rewardBtn">Back to World</button>
+    </div>
+  </div>
+
+  <!-- FINALE (once, when the last star lands) -->
+  <div class="reward finale" :class="{ show: finaleOpen }" x-cloak
+       role="dialog" aria-modal="true" aria-label="You finished Webo's World"
+       @keydown.escape.window="finaleOpen && closeFinale()"
+       x-effect="finaleOpen && $nextTick(() => $refs.finaleBtn && $refs.finaleBtn.focus())">
+    <div class="reward-card">
+      <div class="big-webo" x-html="weboSvg" aria-hidden="true"></div>
+      <h2>You finished Webo's World! &#127942;</h2>
+      <p>Every lesson done and <b x-text="lessons.length"></b> stars earned. You know about earning, saving, growing, sharing, and planning. That is a LOT!</p>
+      <p>Your world stays yours. Tap any lesson to play it again whenever you like.</p>
+      <div class="reward-stars" aria-hidden="true">&#11088;&#11088;&#11088;</div>
+      <button class="btn" @click="closeFinale()" x-ref="finaleBtn">Back to my World</button>
     </div>
   </div>
 

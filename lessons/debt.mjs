@@ -26,6 +26,7 @@ export default {
   sub: 'Borrow carefully, pay back soon',
   icon: '\u{2603}\u{FE0F}',
   rewardTitle: 'Snowball melted!',
+  tip: 'Borrow carefully, pay back soon! \u{2603}\u{FE0F}',
   prop: {
     pos: { left: '27%', bottom: '6px' },
     html: `<svg width="40" height="52" viewBox="0 0 48 62">

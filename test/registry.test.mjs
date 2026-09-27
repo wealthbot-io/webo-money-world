@@ -19,6 +19,8 @@ test('every lesson has the required fields and a runnable flow', () => {
     assert.ok(l.prop && typeof l.prop.html === 'string' && l.prop.html.length, `lesson ${i} prop.html`);
     // A prop must be placeable: either a tuned CSS class or an inline position.
     assert.ok(l.prop.cls || l.prop.pos, `lesson ${i} prop needs a cls or pos`);
+    assert.ok(typeof l.tip === 'string' && l.tip.length && l.tip.length < 70, `lesson ${i} has a short Webo tip`);
+    assert.ok(!l.tip.includes('\u2014'), `lesson ${i} tip has no em dash`);
   });
 });
 

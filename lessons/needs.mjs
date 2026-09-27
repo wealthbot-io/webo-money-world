@@ -6,6 +6,7 @@ export default {
   sub: 'What we must have vs what is nice',
   icon: '\u{1F9FA}',
   rewardTitle: 'Needs vs Wants done!',
+  tip: 'Needs first, then wants! \u{1F9FA}',
   prop: {
     cls: 'prop-basket',
     img: '/assets/props/needs.png',
