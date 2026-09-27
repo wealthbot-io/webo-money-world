@@ -7,6 +7,10 @@ export default {
   icon: '\u{1F9FA}',
   rewardTitle: 'Needs vs Wants done!',
   tip: 'Needs first, then wants! \u{1F9FA}',
+  grownups: {
+    teaches: 'Needs come first; wants are chosen with what is left.',
+    tryAtHome: 'At the store, play the sort game: is this a need or a want? Let them decide and explain.',
+  },
   prop: {
     cls: 'prop-basket',
     img: '/assets/props/needs.png',

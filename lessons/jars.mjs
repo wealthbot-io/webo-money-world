@@ -7,6 +7,10 @@ export default {
   icon: '\u{1FAD9}',
   rewardTitle: 'Three Jars done!',
   tip: 'Three jars: Spend, Save, Grow! \u{1FAD9}',
+  grownups: {
+    teaches: 'Money has different jobs: some to spend now, some to save for later, some to grow.',
+    tryAtHome: 'Next time your child gets pocket money, offer three real jars or envelopes and let them split it. Ask why they chose the split.',
+  },
   prop: {
     cls: 'prop-jars',
     img: '/assets/props/jars.png',

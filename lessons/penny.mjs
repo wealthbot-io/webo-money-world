@@ -20,6 +20,10 @@ export default {
   icon: '\u{1FA99}',
   rewardTitle: 'Magic unlocked!',
   tip: 'Tiny coins become BIG over time! \u{2728}',
+  grownups: {
+    teaches: 'Compound growth: money that grows a little, then grows on the growth, becomes a lot.',
+    tryAtHome: 'Fold a sheet of paper in half as many times as you can. Each fold doubles the layers, like the penny doubling.',
+  },
   prop: {
     cls: 'prop-tree',
     img: '/assets/props/penny.png',

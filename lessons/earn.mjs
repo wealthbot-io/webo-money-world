@@ -7,6 +7,10 @@ export default {
   icon: '\u{1F4AA}',
   rewardTitle: 'You are an earner!',
   tip: 'Work turns into coins! \u{1F4AA}',
+  grownups: {
+    teaches: 'Money comes from effort: work and helping turn into coins.',
+    tryAtHome: 'Agree on one extra job at home that earns a small amount, separate from regular chores.',
+  },
   prop: {
     cls: 'prop-coins',
     img: '/assets/props/earn.png',

@@ -30,6 +30,10 @@ export default {
   icon: '\u{1F4CB}',
   rewardTitle: 'You have a plan!',
   tip: 'A good plan makes coins go further! \u{1F4CB}',
+  grownups: {
+    teaches: 'A money helper is a coach who helps a family make a plan; the family still makes its own choices.',
+    tryAtHome: 'Share, in simple words, one plan your family has for money (a trip, a goal) and how you decided on it.',
+  },
   prop: {
     pos: { left: '66%', bottom: '150px' },
     html: `<svg width="34" height="44" viewBox="0 0 34 44">

@@ -27,6 +27,10 @@ export default {
   icon: '\u{2603}\u{FE0F}',
   rewardTitle: 'Snowball melted!',
   tip: 'Borrow carefully, pay back soon! \u{2603}\u{FE0F}',
+  grownups: {
+    teaches: 'Borrowing is a promise to pay back; waiting adds a little extra (interest), so pay back soon.',
+    tryAtHome: 'Lend your child a small amount for something now and agree on when it comes back. Keep it friendly and follow through.',
+  },
   prop: {
     pos: { left: '27%', bottom: '6px' },
     html: `<svg width="40" height="52" viewBox="0 0 48 62">

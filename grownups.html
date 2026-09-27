@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>For Grown-ups - Webo's Money World</title>
+<meta name="description" content="What each Webo's Money World lesson teaches, how to talk about it at home, and how the demo keeps children's privacy.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<!-- The lesson list below is rendered from the same registry the game uses
+     (lessons/index.mjs), so it can never drift from what children actually play. -->
+<script type="module" src="/grownups.mjs"></script>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="app gu">
+
+  <header>
+    <a class="brand" href="/" aria-label="Back to Webo's Money World">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="3" r="1.6" fill="#0a1628"/><rect x="11.3" y="4" width="1.4" height="3" fill="#0a1628"/><rect x="5" y="7" width="14" height="13" rx="2" fill="#0a1628"/><circle cx="9" cy="11.5" r="1.4" fill="#fff"/><circle cx="15" cy="11.5" r="1.4" fill="#fff"/><path d="M8 16 L12 19 L16 16" stroke="#fff" stroke-width="1.6" fill="none"/></svg>
+      </div>
+      <div class="brand-name">webo's <span>money world</span></div>
+    </a>
+    <a class="device-btn" href="/">&larr; <span class="device-label">Back to the game</span></a>
+  </header>
+
+  <main class="gu-main">
+    <h1 class="gu-h1">For grown-ups</h1>
+    <p class="gu-lead">Webo's Money World is a free, playful introduction to money for children aged about 6 to 10. Twelve short lessons, one idea each, built on the <a href="https://www.consumerfinance.gov/consumer-tools/money-as-you-grow/" rel="noopener" target="_blank">CFPB Money as You Grow</a> milestones and the <a href="https://www.jumpstart.org/what-we-do/support-financial-education/standards/" rel="noopener" target="_blank">Jump$tart national standards</a>. Everything is metaphor and simple arithmetic: no real money, no products, no advice.</p>
+
+    <section class="gu-section" aria-labelledby="gu-lessons-h">
+      <h2 class="gu-h2" id="gu-lessons-h">The lessons, and one thing to try at home</h2>
+      <p class="gu-sub">In the order children play them. Each card says what the lesson teaches and gives a small, real-world way to keep the conversation going.</p>
+      <ol class="gu-lessons" id="guLessons">
+        <noscript><li class="gu-card">Turn on JavaScript to see the lesson list.</li></noscript>
+      </ol>
+    </section>
+
+    <section class="gu-section" aria-labelledby="gu-privacy-h">
+      <h2 class="gu-h2" id="gu-privacy-h">Privacy and safety</h2>
+      <ul class="gu-list">
+        <li><b>No accounts, no names, no email.</b> Progress is saved on the device. A child can move stars to another device with a short random code; the code holds only which lessons are done, nothing about the child.</li>
+        <li><b>Ask Webo is filtered both ways.</b> What a child types and what Webo replies both pass a content check tuned for young children before anything is shown. Off-topic questions get a friendly nudge back to money. If the check itself is unavailable, Webo asks to try again rather than answering unchecked.</li>
+        <li><b>Nothing to buy, nothing to click through.</b> No ads, no in-app purchases, no links inside the game.</li>
+        <li><b>Still a demo.</b> A child-safety review and legal sign-off are on the list before any wider public launch. Please play alongside younger children as you would with any chat feature.</li>
+      </ul>
+    </section>
+
+    <section class="gu-section" aria-labelledby="gu-who-h">
+      <h2 class="gu-h2" id="gu-who-h">Who made this</h2>
+      <p class="gu-sub">Webo's Money World is a free project from <a href="https://wealthbot.io" rel="noopener" target="_blank">wealthbot.io</a>. It is for learning only and does not offer financial, investment, or tax advice to anyone, grown-ups included.</p>
+    </section>
+  </main>
+
+  <div class="footer-note">
+    A free financial-literacy demo from wealthbot.io. For learning only. No real money, no investment advice.
+  </div>
+
+</div>
+</body>
+</html>

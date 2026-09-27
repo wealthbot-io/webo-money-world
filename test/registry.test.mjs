@@ -21,6 +21,10 @@ test('every lesson has the required fields and a runnable flow', () => {
     assert.ok(l.prop.cls || l.prop.pos, `lesson ${i} prop needs a cls or pos`);
     assert.ok(typeof l.tip === 'string' && l.tip.length && l.tip.length < 70, `lesson ${i} has a short Webo tip`);
     assert.ok(!l.tip.includes('\u2014'), `lesson ${i} tip has no em dash`);
+    // Grown-ups' corner: one line on what it teaches + one thing to try at home.
+    assert.ok(l.grownups && typeof l.grownups.teaches === 'string' && l.grownups.teaches.length > 20, `lesson ${i} grownups.teaches`);
+    assert.ok(typeof l.grownups.tryAtHome === 'string' && l.grownups.tryAtHome.length > 20, `lesson ${i} grownups.tryAtHome`);
+    assert.ok(!(l.grownups.teaches + l.grownups.tryAtHome).includes('\u2014'), `lesson ${i} grownups copy has no em dash`);
   });
 });
 

@@ -517,3 +517,31 @@
   .chat-input button:disabled { opacity: .4; }
 
   .footer-note { text-align: center; font-size: 11px; color: var(--text-dim); opacity: .6; padding: 22px 30px 8px; line-height: 1.5; }
+
+  /* ---------- For Grown-ups page (grownups.html) ---------- */
+  .gu { padding-bottom: 24px; }
+  .gu header .brand { text-decoration: none; color: inherit; }
+  .gu .device-btn { text-decoration: none; }
+  .gu-main { padding: 6px 18px 0; }
+  .gu-h1 { font-family: 'Baloo 2'; font-weight: 800; font-size: 28px; margin: 6px 0 8px; }
+  .gu-lead { font-size: 15px; line-height: 1.6; color: var(--text-dim); }
+  .gu-lead a, .gu-sub a { color: var(--teal); font-weight: 700; }
+  .gu-section { margin-top: 28px; }
+  .gu-h2 { font-family: 'Baloo 2'; font-weight: 800; font-size: 20px; margin-bottom: 6px; }
+  .gu-sub { font-size: 14px; line-height: 1.6; color: var(--text-dim); margin-bottom: 12px; }
+  .gu-lessons { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+  .gu-card { background: var(--navy-card); border: 1px solid var(--navy-line); border-radius: 18px; padding: 14px 15px; }
+  .gu-card-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .gu-ico { font-size: 26px; width: 40px; height: 40px; display: grid; place-items: center;
+    background: rgba(255,255,255,.04); border-radius: 12px; }
+  .gu-no { font-family: 'Baloo 2'; font-weight: 700; font-size: 11px; letter-spacing: 1.2px;
+    text-transform: uppercase; color: var(--orange); }
+  .gu-name { font-family: 'Baloo 2'; font-weight: 800; font-size: 17px; }
+  .gu-teaches, .gu-home { font-size: 14px; line-height: 1.55; color: var(--text-dim); }
+  .gu-teaches { margin-bottom: 6px; }
+  .gu-teaches b, .gu-home b { color: var(--text); }
+  .gu-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .gu-list li { font-size: 14px; line-height: 1.55; color: var(--text-dim); padding-left: 14px; position: relative; }
+  .gu-list li::before { content: ''; position: absolute; left: 0; top: 9px; width: 6px; height: 6px; border-radius: 50%; background: var(--teal); }
+  .gu-list b { color: var(--text); }
+  .footer-note a { color: inherit; font-weight: 700; }
