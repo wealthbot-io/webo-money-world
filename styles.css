@@ -385,6 +385,22 @@
   .cc-bill { text-align: center; font-family: 'Baloo 2'; font-weight: 700; font-size: 22px; margin: 6px 0 4px; }
   .cc-bill b { color: var(--orange); }
   @media (prefers-reduced-motion: reduce) { .paycard { transition: none; } }
+  .helper-cards { display: flex; gap: 12px; margin: 8px 0 12px; }
+  .helper-card { flex: 1; background: var(--navy-card); border: 1px solid var(--navy-line); border-radius: 16px;
+    padding: 14px 10px; text-align: center; font-size: 13px; line-height: 1.35; }
+  .helper-emoji { font-size: 34px; margin-bottom: 6px; }
+  .plan-list { list-style: none; padding: 0; margin: 10px 0 12px; display: flex; flex-direction: column; gap: 8px; }
+  .plan-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px;
+    background: var(--navy-card); border: 1px solid var(--navy-line); color: var(--text-dim); font-size: 14px;
+    transition: border-color .3s, color .3s; }
+  .plan-item.on { border-color: var(--green); color: inherit; }
+  .plan-emoji { font-size: 22px; width: 30px; text-align: center; }
+  .race-row { margin: 10px 0 14px; }
+  .race-label { display: flex; justify-content: space-between; font-family: 'Baloo 2'; font-weight: 700;
+    font-size: 14px; margin-bottom: 6px; }
+  .race-months { color: var(--text-dim); font-size: 13px; }
+  .goal-fill.race-guess { background: linear-gradient(90deg, var(--red), #d9594a); }
+  .goal-fill.race-plan { background: linear-gradient(90deg, var(--green), #3fae5c); }
   .debt-stage { height: 128px; display: grid; place-items: center; }
   .debt-ball { border-radius: 50%; display: grid; place-items: center;
     background: radial-gradient(circle at 35% 30%, #fff, #cfe0f5); box-shadow: 0 6px 18px rgba(0,0,0,.35);

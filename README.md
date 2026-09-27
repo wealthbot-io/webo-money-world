@@ -103,7 +103,8 @@ npm test          # node --test
 
 They lock the highest-value invariants from the security audit (issue #24): the
 COPPA no-PII guarantee in `sanitizeProgress`, input normalization (`cleanCode`,
-`cleanClientId`), the moderation denylist, the spoof-resistant `clientIp`, and the
+`cleanClientId`), the moderation denylist, the full moderation gate (safe passes, regex-missed
+unsafe blocks, fail-closed on classifier outage, second provider), the spoof-resistant `clientIp`, and the
 KV layer (atomic incr-with-TTL, 3-state `kvSetNx`, fail-open / fail-to-low-cap).
 
 ## Deploying to Vercel
@@ -133,7 +134,7 @@ Environment Variables):
 | All three lesson flows fully playable | Done |
 | World props, progress dots, star count driven by state | Done |
 | Ask Webo via a server-side endpoint; no key in the client | Done |
-| Moderation on Ask Webo input and output; rate limiting | Starter screen done; needs a real moderation model before launch |
+| Moderation on Ask Webo input and output; rate limiting | Regex + Haiku classifier + optional independent 2nd provider (`OPENAI_API_KEY`), fail-closed, block counters without content; still needs a child-safety specialist review before launch (#1) |
 | No PII collected or logged; COPPA posture confirmed | No PII logged; COPPA sign-off with counsel is a launch gate |
 | Mobile-first layout | Inherited from the prototype (480px column); needs device QA |
 | Adding a 4th lesson = array entry + flow fn + prop | Confirmed (see the comment on the `lessons` array) |
