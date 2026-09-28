@@ -117,6 +117,7 @@
       <p x-html="rewardText"></p>
       <div class="reward-stars" aria-hidden="true">&#11088;&#11088;&#11088;</div>
       <button class="btn" @click="closeReward()" x-ref="rewardBtn">Back to World</button>
+      <button class="btn ghost small" @click="askAboutLesson()">Ask Webo about this &#129302;</button>
     </div>
   </div>
 
@@ -173,22 +174,23 @@
   <!-- CHAT -->
   <div class="chat" :class="{ show: chatOpen }" x-cloak
        role="dialog" aria-modal="true" aria-label="Chat with Webo"
-       @keydown.escape.window="chatOpen = false">
+       @keydown.escape.window="chatOpen && closeChat()">
     <div class="chat-head">
       <span class="mini-webo" x-html="weboSvg" aria-hidden="true"></span>
       <div>
         <div class="ch-name">Webo</div>
         <div class="ch-sub">&#9679; your money buddy</div>
       </div>
-      <button class="close-x" @click="chatOpen = false" aria-label="Close chat">&#10005;</button>
+      <button class="close-x" @click="closeChat()" aria-label="Close chat">&#10005;</button>
     </div>
     <div class="chat-log" x-ref="chatLog" role="log" aria-live="polite" aria-label="Conversation with Webo">
       <template x-for="(m, i) in messages" :key="i">
         <div class="msg" :class="m.who" x-html="m.html"></div>
       </template>
       <div class="msg bot typing" x-show="chatBusy" aria-hidden="true"><span></span><span></span><span></span></div>
+      <div class="chat-slow" x-show="chatSlow" x-transition role="status">Webo is thinking hard... &#129300;</div>
     </div>
-    <div class="chat-suggest" x-show="!hasAsked()">
+    <div class="chat-suggest" x-show="!chatBusy" aria-label="Question ideas">
       <template x-for="s in suggestions" :key="s">
         <button @click="sendChat(s)" x-text="s"></button>
       </template>

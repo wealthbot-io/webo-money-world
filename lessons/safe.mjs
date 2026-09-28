@@ -8,6 +8,7 @@ export default {
   icon: '\u{1F3E6}',
   rewardTitle: 'Safe and sound!',
   tip: 'A bank keeps coins super safe! \u{1F3E6}',
+  ask: ['Why does a bank give bonus coins?', 'Is a piggy bank safe enough?'],
   grownups: {
     teaches: 'Where money is kept matters: a pocket loses it, a piggy bank keeps it, a bank keeps it safe and adds a little.',
     tryAtHome: 'If they have a savings account, show them the balance and any interest line together.',

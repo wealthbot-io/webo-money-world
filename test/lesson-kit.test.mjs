@@ -63,3 +63,21 @@ test('pickHint splits between the next-lesson nudge and an earned tip', () => {
 test('pickHint celebrates when every lesson is done', () => {
   assert.match(pickHint(reg, prog(0, 1, 2), 0.1), /finished every lesson/);
 });
+
+import { pickSuggestions, GENERIC_ASKS } from '../lib/lesson-kit.mjs';
+
+const reg2 = [{ id: 'a', ask: ['A1?', 'A2?'] }, { id: 'b', ask: ['B1?', 'B2?'] }, { id: 'c' }];
+const prog2 = (...done) => reg2.map((l, i) => ({ id: l.id, completed: done.includes(i) }));
+
+test('pickSuggestions falls back to generic starters before any lesson is earned', () => {
+  assert.deepStrictEqual(pickSuggestions(reg2, prog2()), GENERIC_ASKS);
+});
+
+test('pickSuggestions follows the most recently earned lesson, then fills with generics', () => {
+  assert.deepStrictEqual(pickSuggestions(reg2, prog2(0, 1)), ['B1?', 'B2?', GENERIC_ASKS[0], GENERIC_ASKS[1]]);
+});
+
+test('pickSuggestions honours an explicit focus (opened from a reward card) and tolerates a lesson without chips', () => {
+  assert.deepStrictEqual(pickSuggestions(reg2, prog2(0, 1), 0), ['A1?', 'A2?', GENERIC_ASKS[0], GENERIC_ASKS[1]]);
+  assert.deepStrictEqual(pickSuggestions(reg2, prog2(2), 2), GENERIC_ASKS);
+});

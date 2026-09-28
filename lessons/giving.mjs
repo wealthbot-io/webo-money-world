@@ -9,6 +9,7 @@ export default {
   icon: '\u{1F49B}',
   rewardTitle: 'You are a giver!',
   tip: 'A little from many adds up to a lot! \u{1F49B}',
+  ask: ['Why does sharing feel good?', 'How much should I share?'],
   grownups: {
     teaches: 'A little from many adds up; giving helps others and feels good.',
     tryAtHome: 'Let your child choose a cause or a person to help with a small amount, and talk about what it made possible.',
