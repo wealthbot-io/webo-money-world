@@ -7,6 +7,7 @@ export default {
   icon: '\u{1F4AA}',
   rewardTitle: 'You are an earner!',
   tip: 'Work turns into coins! \u{1F4AA}',
+  ask: ['How do kids earn money?', 'Why do people get paid for working?'],
   grownups: {
     teaches: 'Money comes from effort: work and helping turn into coins.',
     tryAtHome: 'Agree on one extra job at home that earns a small amount, separate from regular chores.',

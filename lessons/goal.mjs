@@ -7,6 +7,7 @@ export default {
   icon: '\u{1FA81}',
   rewardTitle: 'Patience pays off!',
   tip: 'Saving a little each week gets the BIG thing! \u{1FA81}',
+  ask: ['How do I stop spending my saving coins?', 'What if my goal takes a long time?'],
   grownups: {
     teaches: 'Delayed gratification: waiting and saving a little at a time gets the bigger thing.',
     tryAtHome: 'Pick a small real goal together, draw a progress bar on the fridge, and color it in as savings grow.',

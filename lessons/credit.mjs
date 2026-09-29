@@ -30,6 +30,7 @@ export default {
   icon: '\u{1F4B3}',
   rewardTitle: 'Card smart!',
   tip: 'A pay-later card is a promise, not free money! \u{1F4B3}',
+  ask: ['Why is a card not free money?', 'What if you wait to pay the bill?'],
   grownups: {
     teaches: 'A credit card is a pay-later card, not free money; paying the whole bill on time costs nothing extra.',
     tryAtHome: 'Next time you tap a card, say out loud that the bill arrives later and you will pay it in full.',

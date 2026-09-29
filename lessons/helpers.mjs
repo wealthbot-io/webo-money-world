@@ -30,6 +30,7 @@ export default {
   icon: '\u{1F4CB}',
   rewardTitle: 'You have a plan!',
   tip: 'A good plan makes coins go further! \u{1F4CB}',
+  ask: ['What does a money helper do all day?', 'Can kids make a money plan?'],
   grownups: {
     teaches: 'A money helper is a coach who helps a family make a plan; the family still makes its own choices.',
     tryAtHome: 'Share, in simple words, one plan your family has for money (a trip, a goal) and how you decided on it.',

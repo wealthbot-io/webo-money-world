@@ -9,7 +9,7 @@
 // Registered as an Alpine component on `alpine:init` so the CSP can stay tight
 // (no inline script; script-src 'self' 'unsafe-eval').
 import { LESSONS } from './lessons/index.mjs';
-import { weboHtml, propArt, speech, escapeHtml, mergeProgress, prefersReducedMotion, pickHint } from './lib/lesson-kit.mjs';
+import { weboHtml, propArt, speech, escapeHtml, mergeProgress, prefersReducedMotion, pickHint, pickSuggestions } from './lib/lesson-kit.mjs';
 
 function weboWorld() {
   return {
@@ -27,13 +27,15 @@ function weboWorld() {
     chatOpen: false, chatBusy: false, chatInput: '',
     chatHistory: [],   // [{role, content}] sent to the backend for context
     messages: [],      // [{who:'bot'|'me', html}] rendered in the log
-    suggestions: ['Why does money grow?', 'What is saving?', 'Is it bad to spend money?', 'What is a stock?'],
+    suggestFocus: -1,  // lesson index the chat was opened about (from the reward card), else -1
+    chatSlow: false,   // reply taking a while: show "thinking hard" so the child knows Webo is still there
+    pendingFinale: false,
+    get suggestions() { return pickSuggestions(LESSONS, this.lessons, this.suggestFocus); },
 
     // ---------- derived ----------
     get stars() { return this.lessons.filter((l) => l.completed).length; },
     get allDone() { return this.lessons.every((l) => l.completed); },
     isLocked(i) { return i > 0 && !this.lessons[i - 1].completed; },
-    hasAsked() { return this.messages.some((m) => m.who === 'me'); },
 
     // ---------- lifecycle ----------
     init() {
@@ -276,12 +278,31 @@ function weboWorld() {
     },
 
     // ================= ASK WEBO (server-proxied Claude) =================
-    openChat() {
+    // `about` is a lesson index when the chat opens from a reward card: the
+    // suggestion chips then follow that lesson and Webo greets with its name.
+    openChat(about = -1) {
+      this.suggestFocus = about;
       this.chatOpen = true;
       if (this.messages.length === 0) {
         this.messages.push({ who: 'bot', html: "Hi there! I'm Webo \u{1F916} Ask me ANYTHING about money and I'll explain it in a fun way. What do you want to know?" });
       }
+      if (about >= 0) {
+        this.messages.push({ who: 'bot', html: `Great job on <b>${escapeHtml(this.lessons[about].name)}</b>! \u{2B50} Got a question about it? Tap one below or type your own.` });
+      }
+      this.scrollChat();
       this.$nextTick(() => { const i = document.querySelector('.chat-input input'); if (i) i.focus(); });
+    },
+    closeChat() {
+      this.chatOpen = false;
+      if (this.pendingFinale) { this.pendingFinale = false; this.finaleOpen = true; this.fireConfetti(); return; }
+      this.returnFocus();
+    },
+    // "Ask Webo about this" on the reward card: skip straight to the chat. If
+    // this was the last star, the finale waits until the chat closes.
+    askAboutLesson() {
+      this.rewardOpen = false;
+      if (this.allDone && !this.finaleShown) { this.finaleShown = true; this.save(); this.pendingFinale = true; }
+      this.openChat(this.currentLesson);
     },
 
     scrollChat() { this.$nextTick(() => { const log = this.$refs.chatLog; if (log) log.scrollTop = log.scrollHeight; }); },
@@ -291,14 +312,21 @@ function weboWorld() {
       if (!text || this.chatBusy) return;
       this.chatInput = '';
       this.messages.push({ who: 'me', html: escapeHtml(text) });
-      this.chatBusy = true;
+      this.chatBusy = true; this.chatSlow = false;
       this.scrollChat();
+      // A reply normally takes a few seconds (two moderation passes + the answer).
+      // After 6s say so; after 25s (the function's own limit) give up cleanly so
+      // the chat never sticks on the typing dots.
+      const slowTimer = setTimeout(() => { this.chatSlow = true; this.scrollChat(); }, 6000);
+      const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+      const abortTimer = setTimeout(() => ctrl && ctrl.abort(), 25000);
       try {
         const res = await fetch('/api/ask', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           // send only the recent turns for context; the server holds the system prompt + key
           body: JSON.stringify({ messages: this.chatHistory.concat({ role: 'user', content: text }).slice(-12), clientId: this.clientId() }),
+          signal: ctrl ? ctrl.signal : undefined,
         });
         const data = await res.json().catch(() => ({}));
         const reply = (data && typeof data.reply === 'string' && data.reply.trim())
@@ -312,9 +340,13 @@ function weboWorld() {
           this.chatHistory.push({ role: 'user', content: text }, { role: 'assistant', content: reply });
         }
       } catch (e) {
-        this.messages.push({ who: 'bot', html: "Oops, my antenna lost signal! \u{1F4E1} Ask me again in a moment!" });
+        const timedOut = e && e.name === 'AbortError';
+        this.messages.push({ who: 'bot', html: timedOut
+          ? "Whoa, that one took me too long to think about! \u{1F916} Ask me again, maybe in a shorter way!"
+          : "Oops, my antenna lost signal! \u{1F4E1} Ask me again in a moment!" });
       }
-      this.chatBusy = false;
+      clearTimeout(slowTimer); clearTimeout(abortTimer);
+      this.chatBusy = false; this.chatSlow = false;
       this.scrollChat();
     },
 

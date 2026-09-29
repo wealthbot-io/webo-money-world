@@ -27,6 +27,7 @@ export default {
   icon: '\u{2603}\u{FE0F}',
   rewardTitle: 'Snowball melted!',
   tip: 'Borrow carefully, pay back soon! \u{2603}\u{FE0F}',
+  ask: ['Why does the snowball grow when I wait?', 'Is borrowing bad?'],
   grownups: {
     teaches: 'Borrowing is a promise to pay back; waiting adds a little extra (interest), so pay back soon.',
     tryAtHome: 'Lend your child a small amount for something now and agree on when it comes back. Keep it friendly and follow through.',

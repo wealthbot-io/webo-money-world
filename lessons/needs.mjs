@@ -7,6 +7,7 @@ export default {
   icon: '\u{1F9FA}',
   rewardTitle: 'Needs vs Wants done!',
   tip: 'Needs first, then wants! \u{1F9FA}',
+  ask: ['Is a pet a need or a want?', 'Why do needs come first?'],
   grownups: {
     teaches: 'Needs come first; wants are chosen with what is left.',
     tryAtHome: 'At the store, play the sort game: is this a need or a want? Let them decide and explain.',

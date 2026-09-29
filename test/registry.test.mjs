@@ -21,6 +21,9 @@ test('every lesson has the required fields and a runnable flow', () => {
     assert.ok(l.prop.cls || l.prop.pos, `lesson ${i} prop needs a cls or pos`);
     assert.ok(typeof l.tip === 'string' && l.tip.length && l.tip.length < 70, `lesson ${i} has a short Webo tip`);
     assert.ok(!l.tip.includes('\u2014'), `lesson ${i} tip has no em dash`);
+    // Ask Webo chips: two kid-voiced questions that follow the lesson.
+    assert.ok(Array.isArray(l.ask) && l.ask.length === 2, `lesson ${i} has 2 ask chips`);
+    l.ask.forEach((q) => { assert.ok(/\?$/.test(q) && q.length < 50 && !q.includes('—'), `lesson ${i} chip "${q}"`); });
     // Grown-ups' corner: one line on what it teaches + one thing to try at home.
     assert.ok(l.grownups && typeof l.grownups.teaches === 'string' && l.grownups.teaches.length > 20, `lesson ${i} grownups.teaches`);
     assert.ok(typeof l.grownups.tryAtHome === 'string' && l.grownups.tryAtHome.length > 20, `lesson ${i} grownups.tryAtHome`);

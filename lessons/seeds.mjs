@@ -7,6 +7,7 @@ export default {
   icon: '\u{1F331}',
   rewardTitle: 'You did it!',
   tip: 'Spread your seeds around! \u{1F333}',
+  ask: ['Why plant lots of seeds and not one?', 'What happens if one seed fails?'],
   grownups: {
     teaches: 'Diversification: spreading money across many things means one failure does not ruin everything.',
     tryAtHome: 'Ask: if you could only plant one seed and it did not grow, how would you feel? What if you planted six?',
